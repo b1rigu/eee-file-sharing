@@ -29,7 +29,7 @@ export default async function Dashboard() {
     .leftJoin(uploadedFiles, eq(fileAccess.fileId, uploadedFiles.id));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col items-center gap-4">
       <h1>Dashboard</h1>
       <h2>Welcome {session.user.name}</h2>
       {session.user.image && (
@@ -41,20 +41,25 @@ export default async function Dashboard() {
         />
       )}
       <SecurityToggle userKey={userKey} />
-      <div className="space-y-2">
+      <div className="space-y-2 w-full">
         <h2>Uploaded Files</h2>
         {userAvailableFiles.map((availableFile) => (
-          <div key={availableFile.file_access.id} className="p-2 bg-gray-900">
+          <div
+            key={availableFile.file_access.id}
+            className="p-2 bg-gray-200 dark:bg-gray-900"
+          >
             <h3>{availableFile.uploaded_files?.fileName}</h3>
             <p>{availableFile.uploaded_files?.fileType}</p>
             <p>{availableFile.uploaded_files?.fileSize} bytes</p>
-            <DecryptFile
-              fileId={availableFile.file_access.fileId}
-              fileName={availableFile.uploaded_files?.fileName!}
-              encryptedFileKey={availableFile.file_access.encryptedFileKey}
-              iv={availableFile.file_access.iv}
-            />
-            <DeleteFileButton fileId={availableFile.file_access.fileId} />
+            <div className="flex items-center gap-2">
+              <DecryptFile
+                fileId={availableFile.file_access.fileId}
+                fileName={availableFile.uploaded_files?.fileName!}
+                encryptedFileKey={availableFile.file_access.encryptedFileKey}
+                iv={availableFile.file_access.iv}
+              />
+              <DeleteFileButton fileId={availableFile.file_access.fileId} />
+            </div>
           </div>
         ))}
       </div>

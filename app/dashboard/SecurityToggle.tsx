@@ -99,9 +99,9 @@ export function SecurityToggle({
     <button
       disabled={isEnabled || loading}
       onClick={userKey ? tryDecryptingPrivateKey : handleEnable}
-      className="bg-blue-500 text-white p-2 rounded disabled:bg-gray-600 disabled:text-gray-700"
+      className="bg-blue-500 text-white p-2 rounded disabled:bg-gray-400 disabled:text-gray-700 hover:bg-blue-600 cursor-pointer disabled:cursor-auto"
     >
-      {loading ? "Enabling..." : "Enable Secure Mode"}
+      {isEnabled ? "Secure mode enabled" : loading ? "Enabling..." : "Enable Secure Mode"}
     </button>
   );
 }

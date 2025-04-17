@@ -3,13 +3,11 @@
 import { unauthenticatedActionClient } from "@/lib/safe-action";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 
 export const signInWithGoogleAction = unauthenticatedActionClient
   .metadata({ actionName: "signInWithGoogleAction" })
   .action(async () => {
     const data = await auth.api.signInSocial({
-      headers: await headers(),
       body: {
         provider: "google",
         callbackURL: "/dashboard",
