@@ -23,7 +23,7 @@ export function SecurityToggle({
 
   useEffect(() => {
     tryDecryptingPrivateKey();
-  }, [userKey]);
+  }, []);
 
   async function tryDecryptingPrivateKey() {
     setLoading(true);

@@ -6,6 +6,7 @@ import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import { revalidatePath } from "next/cache";
+import { checkSignature } from "./utils";
 
 export const insertUploadedFileAction = authActionClient
   .metadata({ actionName: "insertUploadedFileAction" })
@@ -19,13 +20,17 @@ export const insertUploadedFileAction = authActionClient
         type: z.string(),
         size: z.string(),
       }),
+      signature: z.string(),
+      signatureMessage: z.string(),
     })
   )
   .action(
     async ({
       ctx,
-      parsedInput: { filePath, fileInfo, encryptedFileKey, iv },
+      parsedInput: { filePath, fileInfo, encryptedFileKey, iv, signature, signatureMessage },
     }) => {
+      await checkSignature(signature, signatureMessage, ctx.session.user.id);
+
       const fileId = uuidv4();
       await db.transaction(async (tx) => {
         await tx.insert(uploadedFiles).values({

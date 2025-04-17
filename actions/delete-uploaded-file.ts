@@ -7,37 +7,44 @@ import { authActionClient } from "@/lib/safe-action";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { checkSignature } from "./utils";
 
 export const deleteUploadedFileAction = authActionClient
   .metadata({ actionName: "deleteUploadedFileAction" })
   .schema(
     z.object({
       fileId: z.string(),
+      signature: z.string(),
+      signatureMessage: z.string(),
     })
   )
-  .action(async ({ ctx, parsedInput: { fileId } }) => {
-    const uploadedFile = await db.query.uploadedFiles.findFirst({
-      where: eq(uploadedFiles.id, fileId),
-      with: {
-        fileAccess: true,
-      },
-    });
+  .action(
+    async ({ ctx, parsedInput: { fileId, signature, signatureMessage } }) => {
+      await checkSignature(signature, signatureMessage, ctx.session.user.id);
 
-    if (!uploadedFile) {
-      throw new Error("File not found");
+      const uploadedFile = await db.query.uploadedFiles.findFirst({
+        where: eq(uploadedFiles.id, fileId),
+        with: {
+          fileAccess: true,
+        },
+      });
+
+      if (!uploadedFile) {
+        throw new Error("File not found");
+      }
+
+      if (
+        uploadedFile.fileAccess.findIndex(
+          (fileAccess) => fileAccess.userId === ctx.session.user.id
+        ) === -1
+      ) {
+        throw new Error("You do not have permission to delete this file");
+      }
+
+      await db.delete(uploadedFiles).where(eq(uploadedFiles.id, fileId));
+
+      await minioClient.removeObject("uploaded-files", uploadedFile.filePath);
+
+      revalidatePath("/dashboard");
     }
-
-    if (
-      uploadedFile.fileAccess.findIndex(
-        (fileAccess) => fileAccess.userId === ctx.session.user.id
-      ) === -1
-    ) {
-      throw new Error("You do not have permission to delete this file");
-    }
-
-    await db.delete(uploadedFiles).where(eq(uploadedFiles.id, fileId));
-
-    await minioClient.removeObject("uploaded-files", uploadedFile.filePath);
-
-    revalidatePath("/dashboard");
-  });
+  );

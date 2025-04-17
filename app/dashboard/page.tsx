@@ -51,7 +51,6 @@ export default async function Dashboard() {
             <DecryptFile
               fileId={availableFile.file_access.fileId}
               fileName={availableFile.uploaded_files?.fileName!}
-              filePath={availableFile.uploaded_files?.filePath!}
               encryptedFileKey={availableFile.file_access.encryptedFileKey}
               iv={availableFile.file_access.iv}
             />

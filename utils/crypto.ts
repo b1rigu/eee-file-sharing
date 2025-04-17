@@ -1,5 +1,3 @@
-"use client";
-
 export async function generateRsaKeyPair() {
   const keyPair = await crypto.subtle.generateKey(
     {
@@ -35,6 +33,22 @@ export async function exportPublicKey(publicKey: CryptoKey): Promise<string> {
 }
 
 export async function importPrivateKey(base64Key: string): Promise<CryptoKey> {
+  const binaryKey = base64ToUint8Array(base64Key);
+  return await crypto.subtle.importKey(
+    "pkcs8",
+    binaryKey,
+    {
+      name: "RSA-PSS",
+      hash: "SHA-256",
+    },
+    true,
+    ["sign"]
+  );
+}
+
+export async function importDecryptPrivateKey(
+  base64Key: string
+): Promise<CryptoKey> {
   const binaryKey = base64ToUint8Array(base64Key);
   return await crypto.subtle.importKey(
     "pkcs8",
@@ -167,4 +181,20 @@ export function base64ToUint8Array(base64: string): Uint8Array {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes;
+}
+
+export async function signMessage(
+  privateKey: CryptoKey,
+  message: string
+): Promise<ArrayBuffer> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  return await crypto.subtle.sign(
+    {
+      name: "RSA-PSS",
+      saltLength: 32,
+    },
+    privateKey,
+    data
+  );
 }

@@ -1,24 +1,40 @@
 "use client";
 
 import { getSignedDownloadUrlAction } from "@/actions/get-signed-download-url";
-import { base64ToUint8Array, importPrivateKey } from "@/utils/crypto";
+import {
+  base64ToUint8Array,
+  importDecryptPrivateKey,
+  importPrivateKey,
+  signMessage,
+  uint8ArrayToBase64,
+} from "@/utils/crypto";
 
 export function DecryptFile({
   fileId,
   fileName,
-  filePath,
   encryptedFileKey,
   iv,
 }: {
   fileId: string;
   fileName: string;
-  filePath: string;
   encryptedFileKey: string;
   iv: string;
 }) {
   async function downloadFile() {
+    const localPrivateKey = localStorage.getItem("privateKey");
+    if (!localPrivateKey) {
+      alert("You need to enable security first");
+      return;
+    }
+
+    const importedPrivateKey = await importPrivateKey(localPrivateKey);
+    console.log("importedPrivateKey", importedPrivateKey);
+    const signature = await signMessage(importedPrivateKey, "hello");
+
     const downloadUrlResult = await getSignedDownloadUrlAction({
       fileId: fileId,
+      signature: uint8ArrayToBase64(new Uint8Array(signature)),
+      signatureMessage: "hello",
     });
     if (downloadUrlResult?.serverError) {
       alert(downloadUrlResult.serverError);
@@ -34,19 +50,13 @@ export function DecryptFile({
       const blob = await response.blob();
       const encryptedFileBuffer = await blob.arrayBuffer();
 
-      const localPrivateKey = localStorage.getItem("privateKey");
-      if (!localPrivateKey) {
-        alert("You need to enable security first");
-        return;
-      }
-
-      const importedPrivateKey = await importPrivateKey(localPrivateKey);
+      const importedDecryptPrivateKey = await importDecryptPrivateKey(localPrivateKey);
 
       const rawAesKey = await crypto.subtle.decrypt(
         {
           name: "RSA-OAEP",
         },
-        importedPrivateKey,
+        importedDecryptPrivateKey,
         base64ToUint8Array(encryptedFileKey)
       );
 
