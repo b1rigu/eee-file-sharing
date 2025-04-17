@@ -9,15 +9,20 @@ import {
   signMessage,
   uint8ArrayToBase64,
 } from "@/utils/crypto";
+import axios from "axios";
+import { useState } from "react";
 import Dropzone from "react-dropzone";
 
 export function FileUpload() {
+  const [uploadProgress, setUploadProgress] = useState(0);
+
   return (
     <Dropzone
       multiple={false}
       maxFiles={1}
       onDrop={async (acceptedFiles) => {
         const file = acceptedFiles[0];
+        setUploadProgress(0);
 
         try {
           const localPrivateKey = localStorage.getItem("privateKey");
@@ -80,9 +85,24 @@ export function FileUpload() {
             rawKey
           );
 
-          await fetch(signedUploadData.url, {
-            method: "PUT",
-            body: encryptedFile,
+          await axios.put(signedUploadData.url, encryptedFile, {
+            onUploadProgress: (evt) => {
+              const { loaded, total, rate, progress } = evt;
+              const progressFormatted = (progress ?? 0) * 100;
+              setUploadProgress(progressFormatted);
+
+              console.log(`Uploaded: ${((progress ?? 0) * 100).toFixed(2)}%`);
+              console.log(`Speed: ${rate} B/s`);
+
+              if (rate && total) {
+                const remaining = total - loaded;
+                const estimated = remaining / rate;
+
+                console.log(
+                  `Estimated time left: ${estimated.toFixed(2)} seconds`
+                );
+              }
+            },
           });
 
           const insertResult = await insertUploadedFileAction({
@@ -107,6 +127,8 @@ export function FileUpload() {
           alert("Failed to upload file");
           console.error(error);
         }
+
+        setUploadProgress(0);
       }}
     >
       {({ getRootProps, getInputProps }) => (
@@ -117,6 +139,9 @@ export function FileUpload() {
           >
             <input {...getInputProps()} />
             <p>Drag 'n' drop some files here, or click to select files</p>
+            {uploadProgress !== 0 && (
+              <p className="font-semibold mt-2">Uploading {uploadProgress}%</p>
+            )}
           </div>
         </section>
       )}

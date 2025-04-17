@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@t3-oss/env-nextjs": "^0.12.0",
+    "axios": "^1.8.4",
     "better-auth": "^1.2.7",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.42.0",
@@ -21,6 +22,7 @@
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
     "redis": "^4.7.0",
+    "sonner": "^2.0.3",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
