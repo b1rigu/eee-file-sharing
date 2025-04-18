@@ -8,7 +8,6 @@ import { PrivateKeyProvider } from "@/components/private-key-context";
 import { db } from "@/lib/drizzle";
 import { count, eq } from "drizzle-orm";
 import { fileAccess } from "@/lib/drizzle/schema";
-import { Suspense } from "react";
 
 export default async function Dashboard() {
   const header = await headers();
@@ -38,14 +37,12 @@ export default async function Dashboard() {
           />
         )}
         <SecurityToggle />
-        <div className="space-y-2 w-full">
-          <h2>Uploaded Files</h2>
-          <Suspense key={userAvailableFilesCount[0].count}>
-            <UserFiles />
-          </Suspense>
-        </div>
         <FileUpload />
         <SignOutButton />
+        <div className="space-y-2 w-full">
+          <h2>Uploaded Files</h2>
+          <UserFiles totalCount={userAvailableFilesCount[0].count} />
+        </div>
       </div>
     </PrivateKeyProvider>
   );

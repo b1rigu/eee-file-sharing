@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 export function FileUpload() {
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
   const { localPrivateKey } = usePrivateKey();
 
   if (!localPrivateKey) {
@@ -33,6 +34,7 @@ export function FileUpload() {
       onDrop={async (acceptedFiles) => {
         const file = acceptedFiles[0];
         setUploadProgress(0);
+        setUploading(true);
 
         try {
           if (!localPrivateKey) {
@@ -172,6 +174,7 @@ export function FileUpload() {
           console.error(error);
         }
 
+        setUploading(false);
         setUploadProgress(0);
       }}
     >
@@ -182,8 +185,8 @@ export function FileUpload() {
             className="p-8 border-2 border-dashed rounded-2xl"
           >
             <input {...getInputProps()} />
-            <p>Drag 'n' drop some files here, or click to select files</p>
-            {uploadProgress !== 0 && (
+            <p>Drag 'n' drop a file here, or click to select file</p>
+            {uploading && (
               <p className="font-semibold mt-2">Uploading {uploadProgress}%</p>
             )}
           </div>

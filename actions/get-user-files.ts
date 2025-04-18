@@ -3,7 +3,7 @@
 import { db } from "@/lib/drizzle";
 import { fileAccess, uploadedFiles } from "@/lib/drizzle/schema";
 import { authActionClient } from "@/lib/safe-action";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { checkSignature } from "./utils";
 
@@ -21,12 +21,13 @@ export const getUserFilesAction = authActionClient
       parsedInput.signatureMessage,
       ctx.session.user.id
     );
-    
+
     const userAvailableFiles = await db
       .select()
       .from(fileAccess)
       .where(eq(fileAccess.userId, ctx.session.user.id))
-      .leftJoin(uploadedFiles, eq(fileAccess.fileId, uploadedFiles.id));
+      .leftJoin(uploadedFiles, eq(fileAccess.fileId, uploadedFiles.id))
+      .orderBy(desc(uploadedFiles.createdAt));
 
     return userAvailableFiles;
   });

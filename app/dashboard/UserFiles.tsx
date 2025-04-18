@@ -19,7 +19,7 @@ import {
 } from "@/utils/utils";
 import { toast } from "sonner";
 
-export function UserFiles() {
+export function UserFiles({ totalCount }: { totalCount: number }) {
   const { localPrivateKey } = usePrivateKey();
   const [userAvailableFiles, setUserAvailableFiles] = useState<
     {
@@ -31,7 +31,7 @@ export function UserFiles() {
 
   useEffect(() => {
     getUserFiles();
-  }, [localPrivateKey]);
+  }, [localPrivateKey, totalCount]);
 
   async function getUserFiles() {
     if (!localPrivateKey) {
@@ -148,7 +148,7 @@ export function UserFiles() {
         userAvailableFiles.map((availableFile) => (
           <div
             key={availableFile.file_access.id}
-            className="p-2 bg-gray-200 dark:bg-gray-900"
+            className="p-2 bg-gray-200 dark:bg-gray-900 w-full"
           >
             <h3>{availableFile.uploaded_files?.fileName}</h3>
             <p>{availableFile.uploaded_files?.fileType}</p>
