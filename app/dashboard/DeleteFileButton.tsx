@@ -43,7 +43,7 @@ export function DeleteFileButton({ fileId }: { fileId: string }) {
       className="cursor-pointer border rounded-2xl p-2 hover:bg-gray-300 dark:hover:bg-gray-800"
       onClick={deleteFile}
     >
-      Delete File
+      Delete
     </button>
   );
 }

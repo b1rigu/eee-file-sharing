@@ -148,13 +148,23 @@ export function UserFiles({ totalCount }: { totalCount: number }) {
         userAvailableFiles.map((availableFile) => (
           <div
             key={availableFile.file_access.id}
-            className="p-2 bg-gray-200 dark:bg-gray-900 w-full"
+            className="p-2 bg-gray-200 dark:bg-gray-900 w-full rounded-lg flex items-center gap-2 justify-between flex-wrap"
           >
-            <h3>{availableFile.uploaded_files?.fileName}</h3>
-            <p>{availableFile.uploaded_files?.fileType}</p>
-            <p>
-              {formatFileSize(Number(availableFile.uploaded_files?.fileSize!))}
-            </p>
+            <div>
+              <h3 className="font-semibold">
+                {availableFile.uploaded_files?.fileName}
+              </h3>
+              <div className="flex items-center gap-2">
+                <p className="text-gray-500">
+                  {availableFile.uploaded_files?.fileType},
+                </p>
+                <p className="text-gray-500">
+                  {formatFileSize(
+                    Number(availableFile.uploaded_files?.fileSize!)
+                  )}
+                </p>
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <DecryptFile
                 fileId={availableFile.file_access.fileId}

@@ -25,9 +25,9 @@ export default async function Dashboard() {
 
   return (
     <PrivateKeyProvider>
-      <div className="flex flex-col items-center gap-4">
-        <h1>Dashboard</h1>
-        <h2>Welcome {session.user.name}</h2>
+      <div className="flex flex-col items-center gap-4 w-full md:w-xl p-4">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h2 className="text-xl font-semibold">Welcome {session.user.name}</h2>
         {session.user.image && (
           <img
             src={session.user.image}
@@ -36,9 +36,9 @@ export default async function Dashboard() {
             className="w-24 h-24 rounded-lg"
           />
         )}
+        <SignOutButton />
         <SecurityToggle />
         <FileUpload />
-        <SignOutButton />
         <div className="space-y-2 w-full">
           <h2>Uploaded Files</h2>
           <UserFiles totalCount={userAvailableFilesCount[0].count} />

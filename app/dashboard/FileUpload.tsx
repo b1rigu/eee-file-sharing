@@ -179,7 +179,7 @@ export function FileUpload() {
       }}
     >
       {({ getRootProps, getInputProps }) => (
-        <section>
+        <section className="w-full">
           <div
             {...getRootProps()}
             className="p-8 border-2 border-dashed rounded-2xl"
