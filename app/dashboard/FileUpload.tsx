@@ -5,6 +5,7 @@ import { getUserKeyAction } from "@/actions/get-user-key";
 import { insertUploadedFileAction } from "@/actions/insert-uploaded-file";
 import { SIGN_TEST_MESSAGE } from "@/app.config";
 import { usePrivateKey } from "@/components/private-key-context";
+import { useUserFiles } from "@/components/user-files-context";
 import { importPrivateKey, importPublicKey, signMessage } from "@/utils/crypto";
 import { uint8ArrayToBase64 } from "@/utils/utils";
 import axios from "axios";
@@ -16,6 +17,7 @@ export function FileUpload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const { localPrivateKey } = usePrivateKey();
+  const { refetchFiles } = useUserFiles();
 
   if (!localPrivateKey) {
     return (
@@ -169,6 +171,8 @@ export function FileUpload() {
           if (insertResult?.serverError) {
             throw new Error(insertResult.serverError);
           }
+
+          refetchFiles();
         } catch (error) {
           toast.error("Failed to upload file");
           console.error(error);

@@ -3,12 +3,14 @@
 import { deleteUploadedFileAction } from "@/actions/delete-uploaded-file";
 import { SIGN_TEST_MESSAGE } from "@/app.config";
 import { usePrivateKey } from "@/components/private-key-context";
+import { useUserFiles } from "@/components/user-files-context";
 import { importPrivateKey, signMessage } from "@/utils/crypto";
 import { uint8ArrayToBase64 } from "@/utils/utils";
 import { toast } from "sonner";
 
 export function DeleteFileButton({ fileId }: { fileId: string }) {
   const { localPrivateKey } = usePrivateKey();
+  const { refetchFiles } = useUserFiles();
 
   async function deleteFile() {
     if (!localPrivateKey) {
@@ -36,6 +38,7 @@ export function DeleteFileButton({ fileId }: { fileId: string }) {
       return;
     }
     toast.success("File deleted");
+    refetchFiles();
   }
 
   return (

@@ -21,14 +21,14 @@ export const getSignedUploadUrlAction = authActionClient
       parsedInput: { fileExtension, signature, signatureMessage },
     }) => {
       await checkSignature(signature, signatureMessage, ctx.session.user.id);
-      
+
       const filePath =
         ctx.session.user.id +
         "/" +
         uuidv4() +
         `${fileExtension ? `.${fileExtension}` : ""}`;
       const url = await minioClient.presignedPutObject(
-        "uploaded-files",
+        process.env.MINIO_BUCKET_NAME!,
         filePath,
         1000
       );

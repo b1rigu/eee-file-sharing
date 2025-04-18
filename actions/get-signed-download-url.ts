@@ -41,7 +41,7 @@ export const getSignedDownloadUrlAction = authActionClient
       }
 
       const url = await minioClient.presignedGetObject(
-        "uploaded-files",
+        process.env.MINIO_BUCKET_NAME!,
         uploadedFile.filePath,
         60 * 5
       );

@@ -43,7 +43,10 @@ export const deleteUploadedFileAction = authActionClient
 
       await db.delete(uploadedFiles).where(eq(uploadedFiles.id, fileId));
 
-      await minioClient.removeObject("uploaded-files", uploadedFile.filePath);
+      await minioClient.removeObject(
+        process.env.MINIO_BUCKET_NAME!,
+        uploadedFile.filePath
+      );
 
       revalidatePath("/dashboard");
     }
