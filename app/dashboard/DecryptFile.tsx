@@ -1,13 +1,15 @@
 "use client";
 
 import { getSignedDownloadUrlAction } from "@/actions/get-signed-download-url";
+import { SIGN_TEST_MESSAGE } from "@/app.config";
+import { usePrivateKey } from "@/components/private-key-context";
 import {
-  base64ToUint8Array,
   importDecryptPrivateKey,
   importPrivateKey,
   signMessage,
-  uint8ArrayToBase64,
 } from "@/utils/crypto";
+import { uint8ArrayToBase64, base64ToUint8Array } from "@/utils/utils";
+import { toast } from "sonner";
 
 export function DecryptFile({
   fileId,
@@ -20,24 +22,25 @@ export function DecryptFile({
   encryptedFileKey: string;
   iv: string;
 }) {
+  const { localPrivateKey } = usePrivateKey();
+
   async function downloadFile() {
-    const localPrivateKey = localStorage.getItem("privateKey");
     if (!localPrivateKey) {
-      alert("You need to enable security first");
+      toast.error("You need to enable security first");
       return;
     }
 
     const importedPrivateKey = await importPrivateKey(localPrivateKey);
     console.log("importedPrivateKey", importedPrivateKey);
-    const signature = await signMessage(importedPrivateKey, "hello");
+    const signature = await signMessage(importedPrivateKey, SIGN_TEST_MESSAGE);
 
     const downloadUrlResult = await getSignedDownloadUrlAction({
       fileId: fileId,
       signature: uint8ArrayToBase64(new Uint8Array(signature)),
-      signatureMessage: "hello",
+      signatureMessage: SIGN_TEST_MESSAGE,
     });
     if (downloadUrlResult?.serverError) {
-      alert(downloadUrlResult.serverError);
+      toast.error(downloadUrlResult.serverError);
       return;
     }
     const downloadUrl = downloadUrlResult?.data?.url!;
@@ -50,7 +53,9 @@ export function DecryptFile({
       const blob = await response.blob();
       const encryptedFileBuffer = await blob.arrayBuffer();
 
-      const importedDecryptPrivateKey = await importDecryptPrivateKey(localPrivateKey);
+      const importedDecryptPrivateKey = await importDecryptPrivateKey(
+        localPrivateKey
+      );
 
       const rawAesKey = await crypto.subtle.decrypt(
         {

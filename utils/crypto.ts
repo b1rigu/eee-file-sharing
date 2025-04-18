@@ -1,16 +1,18 @@
+import { base64ToUint8Array, uint8ArrayToBase64 } from "./utils";
+
 export async function generateRsaKeyPair() {
   const keyPair = await crypto.subtle.generateKey(
     {
       name: "RSA-OAEP",
       modulusLength: 4096,
       publicExponent: new Uint8Array([0x01, 0x00, 0x01]), // 65537
-      hash: "SHA-256", // For OAEP padding
+      hash: "SHA-256",
     },
-    true, // extractable (true if you want to export later)
+    true,
     ["encrypt", "decrypt"]
   );
 
-  return keyPair; // { publicKey, privateKey }
+  return keyPair;
 }
 
 export async function importPublicKey(base64Key: string): Promise<CryptoKey> {
@@ -165,30 +167,11 @@ export async function decryptPrivateKeyWithPassword(
   );
 }
 
-export function uint8ArrayToBase64(data: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < data.byteLength; i++) {
-    binary += String.fromCharCode(data[i]);
-  }
-  return btoa(binary);
-}
-
-export function base64ToUint8Array(base64: string): Uint8Array {
-  const binary = atob(base64);
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
 export async function signMessage(
   privateKey: CryptoKey,
   message: string
 ): Promise<ArrayBuffer> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(message);
+  const data = new TextEncoder().encode(message);
   return await crypto.subtle.sign(
     {
       name: "RSA-PSS",

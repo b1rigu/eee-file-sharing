@@ -3,18 +3,28 @@
 import { getSignedUploadUrlAction } from "@/actions/get-signed-upload-url";
 import { getUserKeyAction } from "@/actions/get-user-key";
 import { insertUploadedFileAction } from "@/actions/insert-uploaded-file";
-import {
-  importPrivateKey,
-  importPublicKey,
-  signMessage,
-  uint8ArrayToBase64,
-} from "@/utils/crypto";
+import { SIGN_TEST_MESSAGE } from "@/app.config";
+import { usePrivateKey } from "@/components/private-key-context";
+import { importPrivateKey, importPublicKey, signMessage } from "@/utils/crypto";
+import { uint8ArrayToBase64 } from "@/utils/utils";
 import axios from "axios";
 import { useState } from "react";
 import Dropzone from "react-dropzone";
+import { toast } from "sonner";
 
 export function FileUpload() {
   const [uploadProgress, setUploadProgress] = useState(0);
+  const { localPrivateKey } = usePrivateKey();
+
+  if (!localPrivateKey) {
+    return (
+      <div className="p-8 border-2 border-dashed rounded-2xl">
+        <p className="font-bold text-gray-200 dark:text-gray-700">
+          Enable security to upload files
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Dropzone
@@ -25,28 +35,34 @@ export function FileUpload() {
         setUploadProgress(0);
 
         try {
-          const localPrivateKey = localStorage.getItem("privateKey");
           if (!localPrivateKey) {
-            alert("You need to enable security first");
+            toast.error("You need to enable security first");
             return;
           }
 
           const importedPrivateKey = await importPrivateKey(localPrivateKey);
-          const signature = await signMessage(importedPrivateKey, "hello");
+          const signature = await signMessage(
+            importedPrivateKey,
+            SIGN_TEST_MESSAGE
+          );
 
           const userKeyResult = await getUserKeyAction();
           if (!userKeyResult || userKeyResult.serverError) {
-            alert("You need to enable security first");
+            toast.error("You need to enable security first");
             return;
           }
 
+          const splitted = file.name.split(".");
+          const extension =
+            splitted.length > 1 ? splitted[splitted.length - 1] : null;
+
           const result = await getSignedUploadUrlAction({
-            fileName: file.name,
+            fileExtension: extension,
             signature: uint8ArrayToBase64(new Uint8Array(signature)),
-            signatureMessage: "hello",
+            signatureMessage: SIGN_TEST_MESSAGE,
           });
           if (result?.serverError) {
-            alert(result.serverError);
+            toast.error(result.serverError);
             return;
           }
           const signedUploadData = result?.data!;
@@ -71,6 +87,34 @@ export function FileUpload() {
             aesKey,
             fileBuffer
           );
+
+          const encryptedFileName = await crypto.subtle.encrypt(
+            {
+              name: "AES-GCM",
+              iv,
+            },
+            aesKey,
+            new TextEncoder().encode(file.name)
+          );
+
+          const encryptedFileType = await crypto.subtle.encrypt(
+            {
+              name: "AES-GCM",
+              iv,
+            },
+            aesKey,
+            new TextEncoder().encode(file.type)
+          );
+
+          const encryptedFileSize = await crypto.subtle.encrypt(
+            {
+              name: "AES-GCM",
+              iv,
+            },
+            aesKey,
+            new TextEncoder().encode(file.size.toString())
+          );
+
           const encryptedFile = new Blob([encryptedBuffer]);
 
           const rawKey = await crypto.subtle.exportKey("raw", aesKey);
@@ -112,19 +156,19 @@ export function FileUpload() {
             ),
             iv: uint8ArrayToBase64(iv),
             fileInfo: {
-              name: file.name,
-              type: file.type,
-              size: file.size.toString(),
+              name: uint8ArrayToBase64(new Uint8Array(encryptedFileName)),
+              type: uint8ArrayToBase64(new Uint8Array(encryptedFileType)),
+              size: uint8ArrayToBase64(new Uint8Array(encryptedFileSize)),
             },
             signature: uint8ArrayToBase64(new Uint8Array(signature)),
-            signatureMessage: "hello",
+            signatureMessage: SIGN_TEST_MESSAGE,
           });
 
           if (insertResult?.serverError) {
             throw new Error(insertResult.serverError);
           }
         } catch (error) {
-          alert("Failed to upload file");
+          toast.error("Failed to upload file");
           console.error(error);
         }
 

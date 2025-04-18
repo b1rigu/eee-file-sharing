@@ -1,8 +1,7 @@
 import { db } from "@/lib/drizzle";
 import { userKeys } from "@/lib/drizzle/schema";
-import { base64ToUint8Array } from "@/utils/crypto";
 import { eq } from "drizzle-orm";
-import crypto from "crypto";
+import { base64ToUint8Array } from "@/utils/utils";
 
 export async function checkSignature(
   signature: string,

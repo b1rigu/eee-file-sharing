@@ -10,23 +10,23 @@ export const getSignedUploadUrlAction = authActionClient
   .metadata({ actionName: "getSignedUploadUrlAction" })
   .schema(
     z.object({
-      fileName: z.string(),
+      fileExtension: z.string().nullable(),
       signature: z.string(),
       signatureMessage: z.string(),
     })
   )
   .action(
-    async ({ ctx, parsedInput: { fileName, signature, signatureMessage } }) => {
+    async ({
+      ctx,
+      parsedInput: { fileExtension, signature, signatureMessage },
+    }) => {
       await checkSignature(signature, signatureMessage, ctx.session.user.id);
-
-      const splitted = fileName.split(".");
-      const extension =
-        splitted.length > 1 ? splitted[splitted.length - 1] : null;
+      
       const filePath =
         ctx.session.user.id +
         "/" +
         uuidv4() +
-        `${extension ? `.${extension}` : ""}`;
+        `${fileExtension ? `.${fileExtension}` : ""}`;
       const url = await minioClient.presignedPutObject(
         "uploaded-files",
         filePath,

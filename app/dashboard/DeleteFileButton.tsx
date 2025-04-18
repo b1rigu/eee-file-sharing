@@ -1,17 +1,18 @@
 "use client";
 
 import { deleteUploadedFileAction } from "@/actions/delete-uploaded-file";
-import {
-  importPrivateKey,
-  signMessage,
-  uint8ArrayToBase64,
-} from "@/utils/crypto";
+import { SIGN_TEST_MESSAGE } from "@/app.config";
+import { usePrivateKey } from "@/components/private-key-context";
+import { importPrivateKey, signMessage } from "@/utils/crypto";
+import { uint8ArrayToBase64 } from "@/utils/utils";
+import { toast } from "sonner";
 
 export function DeleteFileButton({ fileId }: { fileId: string }) {
+  const { localPrivateKey } = usePrivateKey();
+
   async function deleteFile() {
-    const localPrivateKey = localStorage.getItem("privateKey");
     if (!localPrivateKey) {
-      alert("You need to enable security first");
+      toast.error("You need to enable security first");
       return;
     }
 
@@ -22,19 +23,19 @@ export function DeleteFileButton({ fileId }: { fileId: string }) {
     }
 
     const importedPrivateKey = await importPrivateKey(localPrivateKey);
-    const signature = await signMessage(importedPrivateKey, "hello");
+    const signature = await signMessage(importedPrivateKey, SIGN_TEST_MESSAGE);
 
     const result = await deleteUploadedFileAction({
       fileId: fileId,
       signature: uint8ArrayToBase64(new Uint8Array(signature)),
-      signatureMessage: "hello",
+      signatureMessage: SIGN_TEST_MESSAGE,
     });
 
     if (result?.serverError) {
-      alert(result.serverError);
+      toast.error(result.serverError);
       return;
     }
-    alert("File deleted");
+    toast.success("File deleted");
   }
 
   return (
