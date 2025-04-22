@@ -1,10 +1,12 @@
 "use server";
 
-import { minioClient } from "@/lib/minio";
 import { authActionClient } from "@/lib/safe-action";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { checkSignature } from "./utils";
+import { s3Client } from "@/lib/s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const getSignedUploadUrlAction = authActionClient
   .metadata({ actionName: "getSignedUploadUrlAction" })
@@ -12,30 +14,28 @@ export const getSignedUploadUrlAction = authActionClient
     z.object({
       fileExtension: z.string().nullable(),
       signature: z.string(),
-      signatureMessage: z.string(),
     })
   )
-  .action(
-    async ({
-      ctx,
-      parsedInput: { fileExtension, signature, signatureMessage },
-    }) => {
-      await checkSignature(signature, signatureMessage, ctx.session.user.id);
+  .action(async ({ ctx, parsedInput: { fileExtension, signature } }) => {
+    await checkSignature(signature, ctx.session.user.id);
 
-      const filePath =
-        ctx.session.user.id +
-        "/" +
-        uuidv4() +
-        `${fileExtension ? `.${fileExtension}` : ""}`;
-      const url = await minioClient.presignedPutObject(
-        process.env.MINIO_BUCKET_NAME!,
-        filePath,
-        1000
-      );
+    const filePath =
+      ctx.session.user.id +
+      "/" +
+      uuidv4() +
+      `${fileExtension ? `.${fileExtension}` : ""}`;
 
-      return {
-        url: url,
-        filePath: filePath,
-      };
-    }
-  );
+    const putCommand = new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME!,
+      Key: filePath,
+    });
+
+    const url = await getSignedUrl(s3Client, putCommand, {
+      expiresIn: 3600,
+    });
+
+    return {
+      url: url,
+      filePath: filePath,
+    };
+  });

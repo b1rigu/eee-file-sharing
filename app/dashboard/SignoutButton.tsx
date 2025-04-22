@@ -4,7 +4,6 @@ import { signOutAction } from "@/actions/auth/signout";
 
 export function SignOutButton() {
   async function signOut() {
-    localStorage.removeItem("privateKey");
     await signOutAction();
   }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle";
-import { fileAccess, uploadedFiles } from "@/lib/drizzle/schema";
+import { uploadedFiles } from "@/lib/drizzle/schema";
 import { authActionClient } from "@/lib/safe-action";
 import { desc, eq } from "drizzle-orm";
 import { z } from "zod";
@@ -12,21 +12,15 @@ export const getUserFilesAction = authActionClient
   .schema(
     z.object({
       signature: z.string(),
-      signatureMessage: z.string(),
     })
   )
   .action(async ({ ctx, parsedInput }) => {
-    await checkSignature(
-      parsedInput.signature,
-      parsedInput.signatureMessage,
-      ctx.session.user.id
-    );
+    await checkSignature(parsedInput.signature, ctx.session.user.id);
 
     const userAvailableFiles = await db
       .select()
-      .from(fileAccess)
-      .where(eq(fileAccess.userId, ctx.session.user.id))
-      .leftJoin(uploadedFiles, eq(fileAccess.fileId, uploadedFiles.id))
+      .from(uploadedFiles)
+      .where(eq(uploadedFiles.userId, ctx.session.user.id))
       .orderBy(desc(uploadedFiles.createdAt));
 
     return userAvailableFiles;

@@ -1,5 +1,4 @@
-import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -53,41 +52,17 @@ export const verification = pgTable("verification", {
 
 export const uploadedFiles = pgTable("uploaded_files", {
   id: text("id").primaryKey(),
-  fileName: text("file_name").notNull(),
-  fileType: text("file_type").notNull(),
-  fileSize: text("file_size").notNull(),
-  filePath: text("file_path").notNull(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  fileKey: text("file_key").notNull(),
+  encryptedFileName: text("encrypted_file_name").notNull(),
+  encryptedFileType: text("encrypted_file_type").notNull(),
+  encryptedFileSize: text("encrypted_file_size").notNull(),
+  encryptedFileKey: text("encrypted_file_key").notNull(),
+  iv: text("iv").notNull(),
   createdAt: timestamp("created_at").notNull(),
 });
-
-export const uploadedFilesRelations = relations(uploadedFiles, ({ many }) => ({
-  fileAccess: many(fileAccess),
-}));
-
-export const fileAccess = pgTable(
-  "file_access",
-  {
-    id: text("id").primaryKey(),
-    fileId: text("file_id")
-      .notNull()
-      .references(() => uploadedFiles.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    encryptedFileKey: text("encrypted_file_key").notNull(),
-    iv: text("iv").notNull(),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
-  },
-  (t) => [unique().on(t.fileId, t.userId)]
-);
-
-export const fileAccessRelations = relations(fileAccess, ({ one }) => ({
-  author: one(uploadedFiles, {
-    fields: [fileAccess.fileId],
-    references: [uploadedFiles.id],
-  }),
-}));
 
 export const userKeys = pgTable("user_keys", {
   id: text("id").primaryKey(),

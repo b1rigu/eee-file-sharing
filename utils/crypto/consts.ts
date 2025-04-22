@@ -1,0 +1,14 @@
+export const SIGN_TEST_MESSAGE = "test message";
+export const AES_GSM_ALGORITHM = "AES-GCM";
+export const AES_KEYGEN_LENGTH = 256;
+export const RSA_ENCRYPTION_AND_DECRYPTION_ALGORITHM = "RSA-OAEP";
+export const RSA_SIGNING_AND_VERIFICATION_ALGORITHM = "RSA-PSS";
+export const RSA_PUBLIC_KEY_EXPORT_FORMAT = "spki";
+export const RSA_PRIVATE_KEY_EXPORT_FORMAT = "pkcs8";
+export const RSA_KEY_SIZE = 4096;
+export const SHA_512_ALGORITHM = "SHA-512";
+export const RSA_SIGN_SALT_LENGTH = 32;
+export const IV_LENGTH = 12;
+export const SALT_LENGTH = 16;
+export const ENCRYPTION_CHUNK_SIZE = 1024 * 1024; // 1 MB
+export const AES_KEY_EXPORT_FORMAT = "raw";

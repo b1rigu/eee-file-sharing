@@ -1,23 +1,24 @@
 "use client";
 
-import { fileAccess, uploadedFiles } from "@/lib/drizzle/schema";
+import { uploadedFiles } from "@/lib/drizzle/schema";
 import {
-  importDecryptPrivateKey,
-  importPrivateKey,
-  signMessage,
-} from "@/utils/crypto";
-import { base64ToUint8Array, uint8ArrayToBase64 } from "@/utils/utils";
+  arrayBufferToBase64,
+  base64ToUint8Array,
+  uint8ArrayToBase64,
+} from "@/utils/utils";
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePrivateKey } from "./private-key-context";
 import { getUserFilesAction } from "@/actions/get-user-files";
-import { SIGN_TEST_MESSAGE } from "@/app.config";
 import { toast } from "sonner";
+import { signMessageWithRSA } from "@/utils/crypto/crypto";
+import {
+  decryptBufferWithAESGCM,
+  importAESKeyForDecrypt,
+} from "@/utils/crypto/aes-utils";
+import { decryptBufferWithRSAPrivateKey } from "@/utils/crypto/rsa-utils";
 
 type UserFilesContextType = {
-  userAvailableFiles: {
-    file_access: typeof fileAccess.$inferSelect;
-    uploaded_files: typeof uploadedFiles.$inferSelect | null;
-  }[];
+  userAvailableFiles: (typeof uploadedFiles.$inferSelect)[];
   refetchFiles: () => void;
   loading: boolean;
 };
@@ -32,10 +33,7 @@ export const UserFilesProvider = ({
   children: React.ReactNode;
 }) => {
   const [userAvailableFiles, setUserAvailableFiles] = useState<
-    {
-      file_access: typeof fileAccess.$inferSelect;
-      uploaded_files: typeof uploadedFiles.$inferSelect | null;
-    }[]
+    (typeof uploadedFiles.$inferSelect)[]
   >([]);
   const { localPrivateKey } = usePrivateKey();
   const [loading, setLoading] = useState(false);
@@ -50,12 +48,11 @@ export const UserFilesProvider = ({
     }
 
     setLoading(true);
-    const importedPrivateKey = await importPrivateKey(localPrivateKey);
-    const signature = await signMessage(importedPrivateKey, SIGN_TEST_MESSAGE);
+
+    const signature = await signMessageWithRSA(localPrivateKey);
 
     const userFilesResult = await getUserFilesAction({
       signature: uint8ArrayToBase64(new Uint8Array(signature)),
-      signatureMessage: SIGN_TEST_MESSAGE,
     });
     setLoading(false);
     if (userFilesResult?.serverError) {
@@ -69,30 +66,24 @@ export const UserFilesProvider = ({
 
     const mappedUserFiles = await Promise.all(
       userFilesResult.data.map(async (item) => {
-        if (item.uploaded_files) {
-          return {
-            ...item,
-            uploaded_files: {
-              ...item.uploaded_files,
-              fileName: await decryptText(
-                item.uploaded_files.fileName,
-                item.file_access.encryptedFileKey,
-                item.file_access.iv
-              ),
-              fileType: await decryptText(
-                item.uploaded_files.fileType,
-                item.file_access.encryptedFileKey,
-                item.file_access.iv
-              ),
-              fileSize: await decryptText(
-                item.uploaded_files.fileSize,
-                item.file_access.encryptedFileKey,
-                item.file_access.iv
-              ),
-            },
-          };
-        }
-        return item;
+        return {
+          ...item,
+          encryptedFileName: await decryptText(
+            item.encryptedFileName,
+            item.encryptedFileKey,
+            item.iv
+          ),
+          encryptedFileType: await decryptText(
+            item.encryptedFileType,
+            item.encryptedFileKey,
+            item.iv
+          ),
+          encryptedFileSize: await decryptText(
+            item.encryptedFileSize,
+            item.encryptedFileKey,
+            item.iv
+          ),
+        };
       })
     );
 
@@ -109,37 +100,20 @@ export const UserFilesProvider = ({
     }
 
     try {
-      const importedDecryptPrivateKey = await importDecryptPrivateKey(
+      const ivBytes = base64ToUint8Array(iv);
+      const encryptedBytes = base64ToUint8Array(encryptedText);
+      const decryptedAesKey = await decryptBufferWithRSAPrivateKey(
+        base64ToUint8Array(encryptedFileKey),
         localPrivateKey
       );
-
-      const rawAesKey = await crypto.subtle.decrypt(
-        {
-          name: "RSA-OAEP",
-        },
-        importedDecryptPrivateKey,
-        base64ToUint8Array(encryptedFileKey)
+      const aesKey = await importAESKeyForDecrypt(
+        arrayBufferToBase64(decryptedAesKey)
       );
-
-      const aesKey = await crypto.subtle.importKey(
-        "raw",
-        rawAesKey,
-        {
-          name: "AES-GCM",
-        },
-        false,
-        ["decrypt"]
-      );
-
-      const decryptedBuffer = await crypto.subtle.decrypt(
-        {
-          name: "AES-GCM",
-          iv: base64ToUint8Array(iv), // Uint8Array (same IV you used for encryption)
-        },
+      const decryptedBuffer = await decryptBufferWithAESGCM(
+        ivBytes,
         aesKey,
-        base64ToUint8Array(encryptedText)
+        encryptedBytes
       );
-
       return new TextDecoder().decode(decryptedBuffer);
     } catch (error) {
       console.error(error);

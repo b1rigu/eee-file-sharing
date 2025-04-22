@@ -13,7 +13,7 @@ export const getUserKeyAction = authActionClient
     });
 
     if (!data) {
-      throw new Error("Key not found");
+      return null;
     }
 
     return data;

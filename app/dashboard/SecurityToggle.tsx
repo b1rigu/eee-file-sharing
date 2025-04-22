@@ -2,96 +2,25 @@
 
 import { enableSecurityAction } from "@/actions/enable-security";
 import { getUserKeyAction } from "@/actions/get-user-key";
-import { SIGN_TEST_MESSAGE } from "@/app.config";
 import { usePrivateKey } from "@/components/private-key-context";
 import { userKeys } from "@/lib/drizzle/schema";
 import {
   decryptPrivateKeyWithPassword,
-  exportPrivateKey,
-  generateRsaKeyPair,
-  exportPublicKey,
-  encryptPrivateKeyWithPasswordBase64,
-  importPrivateKey,
-  signMessage,
-} from "@/utils/crypto";
-import { base64ToUint8Array, uint8ArrayToBase64 } from "@/utils/utils";
-import { useEffect, useState } from "react";
+  encryptPrivateKeyWithPassword,
+} from "@/utils/crypto/crypto";
+import {
+  exportRSAPrivateKey,
+  exportRSAPublicKey,
+  generateRSAKeyPair,
+} from "@/utils/crypto/rsa-utils";
+import { arrayBufferToBase64 } from "@/utils/utils";
+import { useState } from "react";
 import { toast } from "sonner";
 
 export function SecurityToggle() {
   const [loading, setLoading] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const { localPrivateKey, setPrivateLocalKey } = usePrivateKey();
-
-  useEffect(() => {
-    if (isMounted) {
-      initSecurity();
-    } else {
-      setIsMounted(true);
-    }
-  }, [isMounted]);
-
-  async function initSecurity() {
-    setLoading(true);
-    try {
-      const userKeyResult = await getUserKeyAction();
-      if (userKeyResult?.serverError) {
-        toast.error(userKeyResult.serverError);
-        throw new Error(userKeyResult.serverError);
-      }
-
-      if (userKeyResult?.data) {
-        if (localPrivateKey) {
-          const importedPrivateKey = await importPrivateKey(localPrivateKey);
-          const signature = await signMessage(
-            importedPrivateKey,
-            SIGN_TEST_MESSAGE
-          );
-
-          const binaryPublicKey = base64ToUint8Array(
-            userKeyResult.data.publicKey
-          );
-          const importedPublicKey = await crypto.subtle.importKey(
-            "spki",
-            binaryPublicKey,
-            {
-              name: "RSA-PSS",
-              hash: "SHA-256",
-            },
-            true,
-            ["verify"]
-          );
-
-          const isValid = await crypto.subtle.verify(
-            {
-              name: "RSA-PSS",
-              saltLength: 32,
-            },
-            importedPublicKey,
-            signature,
-            new TextEncoder().encode(SIGN_TEST_MESSAGE)
-          );
-
-          if (!isValid) {
-            setPrivateLocalKey(null);
-            requestPassword(userKeyResult.data);
-          } else {
-            setIsEnabled(true);
-          }
-        } else {
-          requestPassword(userKeyResult.data);
-        }
-      } else {
-        if (localPrivateKey) {
-          setPrivateLocalKey(null);
-        }
-      }
-    } catch (error) {
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleEnable() {
     const userKeyResult = await getUserKeyAction();
@@ -118,15 +47,13 @@ export function SecurityToggle() {
 
     try {
       const decryptedPrivatekey = await decryptPrivateKeyWithPassword(
-        base64ToUint8Array(userKey.encryptedPrivateKey),
+        userKey.encryptedPrivateKey,
         password,
-        base64ToUint8Array(userKey.salt),
-        base64ToUint8Array(userKey.iv)
+        userKey.salt,
+        userKey.iv
       );
       setPrivateLocalKey(
-        uint8ArrayToBase64(
-          new Uint8Array(await exportPrivateKey(decryptedPrivatekey))
-        )
+        arrayBufferToBase64(await exportRSAPrivateKey(decryptedPrivatekey))
       );
       setIsEnabled(true);
     } catch (error) {
@@ -142,12 +69,15 @@ export function SecurityToggle() {
     if (!password) return;
 
     setLoading(true);
-    const keyPair = await generateRsaKeyPair();
-    const publicKeyString = await exportPublicKey(keyPair.publicKey);
-    const privateKey = await exportPrivateKey(keyPair.privateKey);
-    const privateKeyString = uint8ArrayToBase64(new Uint8Array(privateKey));
+
+    const keyPair = await generateRSAKeyPair();
+    const publicKey = await exportRSAPublicKey(keyPair.publicKey);
+    const publicKeyString = arrayBufferToBase64(publicKey);
+    const privateKey = await exportRSAPrivateKey(keyPair.privateKey);
+    const privateKeyString = arrayBufferToBase64(privateKey);
+
     setPrivateLocalKey(privateKeyString);
-    const encryptedPrivateKeyData = await encryptPrivateKeyWithPasswordBase64(
+    const encryptedPrivateKeyData = await encryptPrivateKeyWithPassword(
       keyPair.privateKey,
       password
     );
@@ -157,6 +87,7 @@ export function SecurityToggle() {
       salt: encryptedPrivateKeyData.salt,
       iv: encryptedPrivateKeyData.iv,
     });
+
     setLoading(false);
   }
 

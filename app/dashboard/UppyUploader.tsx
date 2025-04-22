@@ -1,0 +1,289 @@
+"use client";
+
+import Uppy, { BasePlugin, Meta, Body, PluginOpts, UppyFile } from "@uppy/core";
+import Dashboard from "@uppy/react/lib/Dashboard";
+import AwsS3, { type AwsBody } from "@uppy/aws-s3";
+import { useEffect, useState } from "react";
+import GoldenRetriever from "@uppy/golden-retriever";
+
+import "@uppy/core/dist/style.min.css";
+import "@uppy/dashboard/dist/style.min.css";
+import { toast } from "sonner";
+import { getUserKeyAction } from "@/actions/get-user-key";
+import { getPartSignedUploadUrlAction } from "@/actions/get-part-signed-upload-url";
+import { arrayBufferToBase64 } from "@/utils/utils";
+import { createMultipartUploadAction } from "@/actions/create-multipart-upload";
+import { listUploadPartsAction } from "@/actions/list-upload-parts";
+import { abortMultipartUploadAction } from "@/actions/abort-multipart-upload";
+import { completeMultipartUploadAction } from "@/actions/complete-multipart-upload";
+import { getSignedUploadUrlAction } from "@/actions/get-signed-upload-url";
+import { insertUploadedFileAction } from "@/actions/insert-uploaded-file";
+import {
+  encryptBlobWithMetaAESGCM,
+  signMessageWithRSA,
+} from "@/utils/crypto/crypto";
+import { usePrivateKey } from "@/components/private-key-context";
+import { useUserFiles } from "@/components/user-files-context";
+
+type RequiredMetaFields = {
+  encryptedAesKey: string;
+  iv: string;
+  fileKey: string;
+  encryptedFileName: string;
+  encryptedFileType: string;
+  encryptedFileSize: string;
+};
+
+async function encrypt(
+  uppyFile: UppyFile<RequiredMetaFields, Body>,
+  publicKey: string
+) {
+  const data = await encryptBlobWithMetaAESGCM(
+    uppyFile.data,
+    uppyFile.name ?? "noname",
+    uppyFile.type,
+    uppyFile.size ?? 0,
+    publicKey
+  );
+  return data;
+}
+
+class Encryption<
+  M extends RequiredMetaFields,
+  B extends Body
+> extends BasePlugin<PluginOpts, M, B> {
+  constructor(uppy: Uppy<M, B>, options: PluginOpts) {
+    super(uppy, options);
+    this.id = options.id || "encryption";
+    this.type = "modifier"; // value doesn't really matter, we may make this optional later
+    this.prepareUpload = this.prepareUpload.bind(this);
+  }
+
+  async prepareUpload(fileIDs: string[]) {
+    const userKeyResult = await getUserKeyAction();
+    if (!userKeyResult || userKeyResult.serverError || !userKeyResult.data) {
+      toast.error("You need to enable security first");
+      throw new Error("You need to enable security first");
+    }
+
+    const promises = fileIDs.map(async (fileID) => {
+      const uppyFile = this.uppy.getFile(fileID);
+      return await encrypt(uppyFile, userKeyResult.data?.publicKey!).then(
+        (encrypted) => {
+          const files = this.uppy.getState().files;
+          this.uppy.setState({
+            files: Object.assign({}, files, {
+              [fileID]: Object.assign({}, files[fileID], {
+                data: encrypted.encryptedBlob,
+              }),
+            }),
+          });
+          this.uppy.setFileMeta(fileID, {
+            encryptedAesKey: encrypted.encryptedAesKey,
+            iv: encrypted.iv,
+            encryptedFileName: encrypted.encryptedFileName,
+            encryptedFileType: encrypted.encryptedFileType,
+            encryptedFileSize: encrypted.encryptedFileSize,
+          } as M);
+        }
+      );
+    });
+    return Promise.all(promises);
+  }
+
+  override install() {
+    this.uppy.addPreProcessor(this.prepareUpload);
+  }
+
+  override uninstall() {
+    this.uppy.removePreProcessor(this.prepareUpload);
+  }
+}
+
+function createUppy(localPrivateKey: string) {
+  const uppy = new Uppy<RequiredMetaFields, AwsBody>({
+    restrictions: {
+      maxNumberOfFiles: 50,
+    },
+  });
+
+  uppy.use(Encryption, {});
+
+  const MiB = 2 ** 20; // 1024 * 1024 bytes = 1 MB
+
+  return uppy
+    .use(AwsS3, {
+      shouldUseMultipart: (file) => {
+        return file.size! > 100 * MiB;
+      },
+      getChunkSize: (file) => {
+        return 10 * MiB;
+      },
+      async signPart(fileObject, options) {
+        const result = await getPartSignedUploadUrlAction({
+          key: options.key,
+          uploadId: options.uploadId,
+          partNumber: options.partNumber,
+        });
+
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          throw new Error(result.serverError);
+        }
+
+        const data = result?.data!;
+        return data;
+      },
+      async createMultipartUpload(file) {
+        const uppyFile = uppy.getFile(file.id);
+        const splitted = uppyFile.name?.split(".");
+        const extension =
+          splitted && splitted.length > 1
+            ? splitted[splitted.length - 1]
+            : null;
+
+        const result = await createMultipartUploadAction({
+          fileExtension: extension,
+        });
+
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          throw new Error(result.serverError);
+        }
+        const data = result?.data!;
+        return data;
+      },
+      async listParts(fileObject, options) {
+        const result = await listUploadPartsAction({
+          key: options.key,
+          uploadId: options.uploadId,
+        });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          throw new Error(result.serverError);
+        }
+        const data = result?.data!;
+        return data;
+      },
+      async abortMultipartUpload(fileObject, options) {
+        const result = await abortMultipartUploadAction({
+          key: options.key,
+          uploadId: options.uploadId,
+        });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          throw new Error(result.serverError);
+        }
+      },
+      async completeMultipartUpload(fileObject, options) {
+        const result = await completeMultipartUploadAction({
+          key: options.key,
+          uploadId: options.uploadId,
+          parts: options.parts.map((part) => {
+            return {
+              PartNumber: part.PartNumber!,
+              ETag: part.ETag!,
+            };
+          }),
+        });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          throw new Error(result.serverError);
+        }
+        const data = result?.data!;
+        uppy.setFileMeta(fileObject.id, {
+          fileKey: options.key,
+        } as RequiredMetaFields);
+
+        return data;
+      },
+      async getUploadParameters(fileObject, options) {
+        if (!localPrivateKey) {
+          toast.error("You need to enable security first");
+          throw new Error("You need to enable security first");
+        }
+
+        const signature = await signMessageWithRSA(localPrivateKey);
+
+        const uppyFile = uppy.getFile(fileObject.id);
+        const splitted = uppyFile.name?.split(".");
+        const extension =
+          splitted && splitted.length > 1
+            ? splitted[splitted.length - 1]
+            : null;
+
+        const result = await getSignedUploadUrlAction({
+          fileExtension: extension,
+          signature: arrayBufferToBase64(signature),
+        });
+        if (result?.serverError) {
+          toast.error(result.serverError);
+          throw new Error(result.serverError);
+        }
+        const signedUploadData = result?.data!;
+
+        uppy.setFileMeta(fileObject.id, {
+          fileKey: signedUploadData.filePath,
+        } as RequiredMetaFields);
+
+        return {
+          method: "PUT",
+          url: signedUploadData.url,
+        };
+      },
+    })
+    .use(GoldenRetriever);
+}
+
+export function UppyUploader() {
+  const [uppy, setUppy] = useState<Uppy<RequiredMetaFields, AwsBody> | null>(
+    null
+  );
+  const { localPrivateKey } = usePrivateKey();
+  const { refetchFiles } = useUserFiles();
+
+  useEffect(() => {
+    if (!localPrivateKey) return;
+
+    const uppy = createUppy(localPrivateKey);
+    setUppy(uppy);
+
+    uppy.on("complete", async (result) => {
+      const { successful = [], failed } = result;
+
+      const validUploads = successful.map((file) => {
+        return {
+          fileKey: file.meta.fileKey as string,
+          encryptedFileName: file.meta.encryptedFileName as string,
+          encryptedFileType: file.meta.encryptedFileType as string,
+          encryptedFileSize: file.meta.encryptedFileSize as string,
+          encryptedFileKey: file.meta.encryptedAesKey as string,
+          iv: file.meta.iv as string,
+        };
+      });
+
+      const insertResult = await insertUploadedFileAction({
+        validUploads: validUploads,
+      });
+
+      if (insertResult?.serverError) {
+        toast.error(insertResult.serverError);
+        throw new Error(insertResult.serverError);
+      }
+
+      refetchFiles();
+      toast.success(`${validUploads.length} files uploaded successfully!`);
+    });
+  }, [localPrivateKey, refetchFiles]);
+
+  if (!uppy) return null;
+
+  return (
+    <Dashboard
+      className="w-full"
+      showProgressDetails={true}
+      theme="dark"
+      uppy={uppy}
+    />
+  );
+}

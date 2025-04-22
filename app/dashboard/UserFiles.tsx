@@ -32,32 +32,30 @@ export function UserFiles() {
       ) : (
         userAvailableFiles.map((availableFile) => (
           <div
-            key={availableFile.file_access.id}
+            key={availableFile.id}
             className="p-2 bg-gray-200 dark:bg-gray-900 w-full rounded-lg flex items-center gap-2 justify-between flex-wrap"
           >
             <div>
               <h3 className="font-semibold break-words break-all max-w-48">
-                {availableFile.uploaded_files?.fileName}
+                {availableFile.encryptedFileName}
               </h3>
               <div className="flex items-center gap-2">
                 <p className="text-gray-500 truncate max-w-48">
-                  {availableFile.uploaded_files?.fileType},
+                  {availableFile.encryptedFileType},
                 </p>
                 <p className="text-gray-500">
-                  {formatFileSize(
-                    Number(availableFile.uploaded_files?.fileSize!)
-                  )}
+                  {formatFileSize(Number(availableFile.encryptedFileSize))}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <DecryptFile
-                fileId={availableFile.file_access.fileId}
-                fileName={availableFile.uploaded_files?.fileName!}
-                encryptedFileKey={availableFile.file_access.encryptedFileKey}
-                iv={availableFile.file_access.iv}
+                fileId={availableFile.id}
+                fileName={availableFile.encryptedFileName}
+                fileSize={Number(availableFile.encryptedFileSize)}
+                encryptedFileKey={availableFile.encryptedFileKey}
               />
-              <DeleteFileButton fileId={availableFile.file_access.fileId} />
+              <DeleteFileButton fileId={availableFile.id} />
             </div>
           </div>
         ))

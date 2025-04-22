@@ -1,1 +1,1 @@
-export const SIGN_TEST_MESSAGE = "test message";
+export const SIGNED_URL_EXPIRATION = 3600;

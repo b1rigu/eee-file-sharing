@@ -1,11 +1,11 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { SignOutButton } from "./SignoutButton";
-import { FileUpload } from "./FileUpload";
-import { SecurityToggle } from "./SecurityToggle";
-import { UserFiles } from "./UserFiles";
 import { PrivateKeyProvider } from "@/components/private-key-context";
 import { UserFilesProvider } from "@/components/user-files-context";
+import { UppyUploader } from "./UppyUploader";
+import { SecurityToggle } from "./SecurityToggle";
+import { UserFiles } from "./UserFiles";
 
 export default async function Dashboard() {
   const header = await headers();
@@ -32,7 +32,7 @@ export default async function Dashboard() {
           )}
           <SignOutButton />
           <SecurityToggle />
-          <FileUpload />
+          <UppyUploader />
           <UserFiles />
         </div>
       </UserFilesProvider>

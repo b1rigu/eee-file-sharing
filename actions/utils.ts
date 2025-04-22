@@ -1,13 +1,9 @@
 import { db } from "@/lib/drizzle";
 import { userKeys } from "@/lib/drizzle/schema";
+import { verifyRSASignedMessage } from "@/utils/crypto/crypto";
 import { eq } from "drizzle-orm";
-import { base64ToUint8Array } from "@/utils/utils";
 
-export async function checkSignature(
-  signature: string,
-  message: string,
-  userId: string
-) {
+export async function checkSignature(signature: string, userId: string) {
   const userKey = await db.query.userKeys.findFirst({
     where: eq(userKeys.userId, userId),
   });
@@ -16,27 +12,7 @@ export async function checkSignature(
     throw new Error("Key not found");
   }
 
-  const binaryKey = base64ToUint8Array(userKey.publicKey);
-  const importedPublicKey = await crypto.subtle.importKey(
-    "spki",
-    binaryKey,
-    {
-      name: "RSA-PSS",
-      hash: "SHA-256",
-    },
-    true,
-    ["verify"]
-  );
-
-  const isValid = await crypto.subtle.verify(
-    {
-      name: "RSA-PSS",
-      saltLength: 32,
-    },
-    importedPublicKey,
-    base64ToUint8Array(signature),
-    new TextEncoder().encode(message)
-  );
+  const isValid = await verifyRSASignedMessage(signature, userKey.publicKey);
 
   if (!isValid) {
     throw new Error("Invalid signature");

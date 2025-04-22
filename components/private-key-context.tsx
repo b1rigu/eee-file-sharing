@@ -1,10 +1,11 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 type PrivateKeyContextType = {
   localPrivateKey: string | null;
-  setPrivateLocalKey: (key: string | null) => void;
+  lock: () => void;
+  setPrivateLocalKey: (key: string) => void;
 };
 
 const PrivateKeyContext = createContext<PrivateKeyContextType | undefined>(
@@ -20,22 +21,18 @@ export const PrivateKeyProvider = ({
     null
   );
 
-  useEffect(() => {
-    const key = localStorage.getItem("privateKey");
-    setPrivateLocalKeyState(key);
-  }, []);
+  const lock = () => {
+    setPrivateLocalKeyState(null);
+  };
 
-  const setPrivateLocalKey = (key: string | null) => {
-    if (key) {
-      localStorage.setItem("privateKey", key);
-    } else {
-      localStorage.removeItem("privateKey");
-    }
+  const setPrivateLocalKey = (key: string) => {
     setPrivateLocalKeyState(key);
   };
 
   return (
-    <PrivateKeyContext.Provider value={{ localPrivateKey, setPrivateLocalKey }}>
+    <PrivateKeyContext.Provider
+      value={{ localPrivateKey, lock, setPrivateLocalKey }}
+    >
       {children}
     </PrivateKeyContext.Provider>
   );
