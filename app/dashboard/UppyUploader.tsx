@@ -3,7 +3,7 @@
 import Uppy, { BasePlugin, Meta, Body, PluginOpts, UppyFile } from "@uppy/core";
 import Dashboard from "@uppy/react/lib/Dashboard";
 import AwsS3, { type AwsBody } from "@uppy/aws-s3";
-import { useEffect, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
 import GoldenRetriever from "@uppy/golden-retriever";
 
 import "@uppy/core/dist/style.min.css";
@@ -24,6 +24,7 @@ import {
 } from "@/utils/crypto/crypto";
 import { usePrivateKey } from "@/components/private-key-context";
 import { useUserFiles } from "@/components/user-files-context";
+import { useTheme } from "next-themes";
 
 type RequiredMetaFields = {
   encryptedAesKey: string;
@@ -100,7 +101,7 @@ class Encryption<
   }
 }
 
-function createUppy(localPrivateKey: string) {
+function createUppy(localPrivateKey: RefObject<string | null>) {
   const uppy = new Uppy<RequiredMetaFields, AwsBody>({
     restrictions: {
       maxNumberOfFiles: 50,
@@ -198,12 +199,12 @@ function createUppy(localPrivateKey: string) {
         return data;
       },
       async getUploadParameters(fileObject, options) {
-        if (!localPrivateKey) {
+        if (!localPrivateKey.current) {
           toast.error("You need to enable security first");
           throw new Error("You need to enable security first");
         }
 
-        const signature = await signMessageWithRSA(localPrivateKey);
+        const signature = await signMessageWithRSA(localPrivateKey.current);
 
         const uppyFile = uppy.getFile(fileObject.id);
         const splitted = uppyFile.name?.split(".");
@@ -232,7 +233,7 @@ function createUppy(localPrivateKey: string) {
         };
       },
     })
-    .use(GoldenRetriever);
+    .use(GoldenRetriever, { serviceWorker: true });
 }
 
 export function UppyUploader() {
@@ -240,12 +241,16 @@ export function UppyUploader() {
     null
   );
   const { localPrivateKey } = usePrivateKey();
+  const localPrivateKeyRef = useRef<string | null>(null);
   const { refetchFiles } = useUserFiles();
+  const { theme } = useTheme();
 
   useEffect(() => {
-    if (!localPrivateKey) return;
+    localPrivateKeyRef.current = localPrivateKey;
+  }, [localPrivateKey]);
 
-    const uppy = createUppy(localPrivateKey);
+  useEffect(() => {
+    const uppy = createUppy(localPrivateKeyRef);
     setUppy(uppy);
 
     uppy.on("complete", async (result) => {
@@ -274,15 +279,15 @@ export function UppyUploader() {
       refetchFiles();
       toast.success(`${validUploads.length} files uploaded successfully!`);
     });
-  }, [localPrivateKey, refetchFiles]);
+  }, [refetchFiles]);
 
-  if (!uppy) return null;
+  if (!uppy || !localPrivateKey) return null;
 
   return (
     <Dashboard
       className="w-full"
       showProgressDetails={true}
-      theme="dark"
+      theme={theme === "dark" ? "dark" : "light"}
       uppy={uppy}
     />
   );

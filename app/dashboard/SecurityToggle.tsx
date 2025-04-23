@@ -3,6 +3,7 @@
 import { enableSecurityAction } from "@/actions/enable-security";
 import { getUserKeyAction } from "@/actions/get-user-key";
 import { usePrivateKey } from "@/components/private-key-context";
+import { Button } from "@/components/ui/button";
 import { userKeys } from "@/lib/drizzle/schema";
 import {
   decryptPrivateKeyWithPassword,
@@ -14,13 +15,13 @@ import {
   generateRSAKeyPair,
 } from "@/utils/crypto/rsa-utils";
 import { arrayBufferToBase64 } from "@/utils/utils";
+import { LockKeyhole, LockKeyholeOpen } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export function SecurityToggle() {
   const [loading, setLoading] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(false);
-  const { localPrivateKey, setPrivateLocalKey } = usePrivateKey();
+  const { localPrivateKey, setPrivateLocalKey, lock } = usePrivateKey();
 
   async function handleEnable() {
     const userKeyResult = await getUserKeyAction();
@@ -55,7 +56,6 @@ export function SecurityToggle() {
       setPrivateLocalKey(
         arrayBufferToBase64(await exportRSAPrivateKey(decryptedPrivatekey))
       );
-      setIsEnabled(true);
     } catch (error) {
       toast.error("Incorrect password");
     }
@@ -91,17 +91,15 @@ export function SecurityToggle() {
     setLoading(false);
   }
 
-  return (
-    <button
-      disabled={isEnabled || loading}
-      onClick={handleEnable}
-      className="bg-blue-500 text-white p-2 rounded disabled:bg-gray-400 disabled:text-gray-700 hover:bg-blue-600 cursor-pointer disabled:cursor-auto"
-    >
-      {isEnabled
-        ? "Secure mode enabled"
-        : loading
-        ? "Enabling..."
-        : "Enable Secure Mode"}
-    </button>
+  return localPrivateKey ? (
+    <Button variant={"secondary"} disabled={loading} onClick={lock}>
+      <LockKeyhole />
+      Lock
+    </Button>
+  ) : (
+    <Button disabled={loading} onClick={handleEnable}>
+      <LockKeyholeOpen />
+      Unlock
+    </Button>
   );
 }

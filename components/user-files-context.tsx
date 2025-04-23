@@ -6,7 +6,7 @@ import {
   base64ToUint8Array,
   uint8ArrayToBase64,
 } from "@/utils/utils";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { usePrivateKey } from "./private-key-context";
 import { getUserFilesAction } from "@/actions/get-user-files";
 import { toast } from "sonner";

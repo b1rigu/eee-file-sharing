@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { RegisterServiceWorker } from "@/components/register-service-worker";
+import { ThemeProvider } from "@/components/theme-provider";
+import { HeaderAuth } from "@/components/HeaderAuth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,11 +28,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col items-center justify-center min-h-screen py-4`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ThemeProvider attribute="class" disableTransitionOnChange>
+          <div className="min-h-screen">
+            <header className="w-full h-16 shadow">
+              <div className="h-full container mx-auto flex items-center justify-between">
+                <h1 className="text-2xl font-bold">EEE File Storage</h1>
+                <div className="flex gap-4 items-center">
+                  <ThemeToggle />
+                  <HeaderAuth />
+                </div>
+              </div>
+            </header>
+            <main className="h-full flex flex-col items-center pt-32">
+              {children}
+            </main>
+          </div>
+        </ThemeProvider>
+        <RegisterServiceWorker />
         <Toaster richColors closeButton />
       </body>
     </html>
