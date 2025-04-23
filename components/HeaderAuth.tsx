@@ -9,11 +9,8 @@ export async function HeaderAuth() {
   const session = await auth.api.getSession({
     headers: header,
   });
-  if (!session) {
-    return <div>Not authenticated</div>;
-  }
 
-  return session.user ? (
+  return session ? (
     <div className="flex gap-4 items-center">
       <ProfileDropdown
         email={session.user.email}

@@ -34,7 +34,7 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" disableTransitionOnChange>
           <div className="min-h-screen">
-            <header className="w-full h-16 shadow">
+            <header className="w-full h-16 border-b border-2">
               <div className="h-full container mx-auto flex items-center justify-between">
                 <h1 className="text-2xl font-bold">EEE File Storage</h1>
                 <div className="flex gap-4 items-center">
@@ -43,7 +43,7 @@ export default function RootLayout({
                 </div>
               </div>
             </header>
-            <main className="h-full flex flex-col items-center pt-32">
+            <main className="container mx-auto p-4">
               {children}
             </main>
           </div>

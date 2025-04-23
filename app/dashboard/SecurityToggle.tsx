@@ -53,9 +53,7 @@ export function SecurityToggle() {
         userKey.salt,
         userKey.iv
       );
-      setPrivateLocalKey(
-        arrayBufferToBase64(await exportRSAPrivateKey(decryptedPrivatekey))
-      );
+      setPrivateLocalKey(arrayBufferToBase64(await exportRSAPrivateKey(decryptedPrivatekey)));
     } catch (error) {
       toast.error("Incorrect password");
     }
@@ -63,9 +61,7 @@ export function SecurityToggle() {
   }
 
   async function handleNewSecurity() {
-    const password = prompt(
-      "Set a master password (DO NOT FORGET, CANNOT RECOVER)"
-    );
+    const password = prompt("Set a master password (DO NOT FORGET, CANNOT RECOVER)");
     if (!password) return;
 
     setLoading(true);
@@ -91,15 +87,18 @@ export function SecurityToggle() {
     setLoading(false);
   }
 
-  return localPrivateKey ? (
-    <Button variant={"secondary"} disabled={loading} onClick={lock}>
-      <LockKeyhole />
-      Lock
-    </Button>
-  ) : (
-    <Button disabled={loading} onClick={handleEnable}>
-      <LockKeyholeOpen />
-      Unlock
-    </Button>
+  return (
+    <div className="flex gap-4 items-center">
+      <Button disabled={loading || !!localPrivateKey} onClick={handleEnable}>
+        <LockKeyholeOpen />
+        {localPrivateKey ? "Unlocked" : "Unlock"}
+      </Button>
+      {localPrivateKey && (
+        <Button variant={"destructive"} disabled={loading} onClick={lock}>
+          <LockKeyhole />
+          Lock
+        </Button>
+      )}
+    </div>
   );
 }
