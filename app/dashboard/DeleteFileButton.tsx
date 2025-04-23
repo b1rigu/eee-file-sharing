@@ -2,6 +2,7 @@
 
 import { deleteUploadedFileAction } from "@/actions/delete-uploaded-file";
 import { usePrivateKey } from "@/components/private-key-context";
+import { Button } from "@/components/ui/button";
 import { useUserFiles } from "@/components/user-files-context";
 import { signMessageWithRSA } from "@/utils/crypto/crypto";
 import { uint8ArrayToBase64 } from "@/utils/utils";
@@ -38,12 +39,5 @@ export function DeleteFileButton({ fileId }: { fileId: string }) {
     refetchFiles();
   }
 
-  return (
-    <button
-      className="cursor-pointer border rounded-2xl p-2 hover:bg-gray-300 dark:hover:bg-gray-800"
-      onClick={deleteFile}
-    >
-      Delete
-    </button>
-  );
+  return <div className="w-full h-full" onClick={deleteFile}>Delete</div>;
 }

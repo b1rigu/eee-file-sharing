@@ -15,7 +15,7 @@ import {
   generateRSAKeyPair,
 } from "@/utils/crypto/rsa-utils";
 import { arrayBufferToBase64 } from "@/utils/utils";
-import { LockKeyhole, LockKeyholeOpen } from "lucide-react";
+import { Unlock, Lock, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -40,7 +40,7 @@ export function SecurityToggle() {
   async function requestPassword(userKey: typeof userKeys.$inferSelect) {
     setLoading(true);
 
-    const password = prompt("Enter your master password to enable security");
+    const password = prompt("Enter your master password to unlock");
     if (!password) {
       setLoading(false);
       return;
@@ -53,7 +53,9 @@ export function SecurityToggle() {
         userKey.salt,
         userKey.iv
       );
-      setPrivateLocalKey(arrayBufferToBase64(await exportRSAPrivateKey(decryptedPrivatekey)));
+      setPrivateLocalKey(
+        arrayBufferToBase64(await exportRSAPrivateKey(decryptedPrivatekey))
+      );
     } catch (error) {
       toast.error("Incorrect password");
     }
@@ -61,7 +63,9 @@ export function SecurityToggle() {
   }
 
   async function handleNewSecurity() {
-    const password = prompt("Set a master password (DO NOT FORGET, CANNOT RECOVER)");
+    const password = prompt(
+      "Set a master password (DO NOT FORGET, CANNOT RECOVER)"
+    );
     if (!password) return;
 
     setLoading(true);
@@ -88,17 +92,23 @@ export function SecurityToggle() {
   }
 
   return (
-    <div className="flex gap-4 items-center">
-      <Button disabled={loading || !!localPrivateKey} onClick={handleEnable}>
-        <LockKeyholeOpen />
-        {localPrivateKey ? "Unlocked" : "Unlock"}
-      </Button>
-      {localPrivateKey && (
-        <Button variant={"destructive"} disabled={loading} onClick={lock}>
-          <LockKeyhole />
+    <Button
+      variant={!localPrivateKey ? "destructive" : "outline"}
+      onClick={localPrivateKey ? lock : handleEnable}
+    >
+      {loading ? (
+        <Loader2 className="animate-spin" />
+      ) : !localPrivateKey ? (
+        <>
+          <Unlock className="h-4 w-4" />
+          Unlock
+        </>
+      ) : (
+        <>
+          <Lock className="h-4 w-4" />
           Lock
-        </Button>
+        </>
       )}
-    </div>
+    </Button>
   );
 }
