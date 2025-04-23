@@ -23,8 +23,9 @@ import {
   signMessageWithRSA,
 } from "@/utils/crypto/crypto";
 import { usePrivateKey } from "@/components/private-key-context";
-import { useUserFiles } from "@/components/user-files-context";
+import { useUserData } from "@/components/user-data-context";
 import { useTheme } from "next-themes";
+import { useDirectory } from "@/components/directory-provider";
 
 type RequiredMetaFields = {
   encryptedAesKey: string;
@@ -242,8 +243,14 @@ export function UppyUploader() {
   );
   const { localPrivateKey } = usePrivateKey();
   const localPrivateKeyRef = useRef<string | null>(null);
-  const { refetchFiles } = useUserFiles();
+  const { refetchData } = useUserData();
   const { theme } = useTheme();
+  const { currentDir } = useDirectory();
+  const currentDirRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    currentDirRef.current = currentDir;
+  }, [currentDir]);
 
   useEffect(() => {
     localPrivateKeyRef.current = localPrivateKey;
@@ -267,7 +274,16 @@ export function UppyUploader() {
         };
       });
 
+      if (!localPrivateKeyRef.current) {
+        toast.error("You need to unlock first");
+        throw new Error("You need to unlock first");
+      }
+
+      const signature = await signMessageWithRSA(localPrivateKeyRef.current);
+
       const insertResult = await insertUploadedFileAction({
+        parentId: currentDirRef.current,
+        signature: arrayBufferToBase64(signature),
         validUploads: validUploads,
       });
 
@@ -276,10 +292,10 @@ export function UppyUploader() {
         throw new Error(insertResult.serverError);
       }
 
-      refetchFiles();
+      refetchData();
       toast.success(`${validUploads.length} files uploaded successfully!`);
     });
-  }, [refetchFiles]);
+  }, [refetchData]);
 
   if (!uppy || !localPrivateKey) return null;
 

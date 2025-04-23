@@ -35,6 +35,36 @@ function generateSalt() {
   return crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
 }
 
+export async function encryptTextWithPublicKey(
+  text: string,
+  RSAPublicKey: string
+) {
+  const aesKey = await generateAESGCMKey();
+  const textBuffer = new TextEncoder().encode(text);
+  const iv = generateIV();
+  const ivString = uint8ArrayToBase64(iv);
+
+  const rawKey = await exportAESKey(aesKey);
+  const encryptedAesKeyBuffer = await encryptBufferWithRSAPublicKey(
+    rawKey,
+    RSAPublicKey
+  );
+  const encryptedAesKey = arrayBufferToBase64(encryptedAesKeyBuffer);
+
+  const encryptedTextBuffer = await encryptBufferWithAESGCM(
+    iv,
+    aesKey,
+    textBuffer
+  );
+  const encryptedText = arrayBufferToBase64(encryptedTextBuffer);
+
+  return {
+    encryptedAesKey,
+    iv: ivString,
+    encryptedText,
+  };
+}
+
 export async function encryptBlobWithMetaAESGCM(
   blob: Blob,
   fileName: string,

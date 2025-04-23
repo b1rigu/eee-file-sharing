@@ -2,17 +2,17 @@
 
 import { usePrivateKey } from "@/components/private-key-context";
 import { Button } from "@/components/ui/button";
-import { useUserFiles } from "@/components/user-files-context";
+import { useUserData } from "@/components/user-data-context";
 import { RefreshCcw } from "lucide-react";
 
 export function RefreshButton() {
   const { localPrivateKey } = usePrivateKey();
-  const { refetchFiles, loading } = useUserFiles();
+  const { refetchData, loading } = useUserData();
 
   if (!localPrivateKey) return null;
 
   return (
-    <Button variant={"outline"} disabled={loading} onClick={refetchFiles}>
+    <Button variant={"outline"} disabled={loading} onClick={refetchData}>
       <RefreshCcw className={`${loading ? "animate-spin" : ""}`} />
       Refresh
     </Button>

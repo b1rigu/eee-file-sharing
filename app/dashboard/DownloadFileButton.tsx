@@ -36,7 +36,7 @@ export function DownloadFileButton({
     const signature = await signMessageWithRSA(localPrivateKey);
 
     const downloadUrlResult = await getSignedDownloadUrlAction({
-      fileId: fileId,
+      dataId: fileId,
       signature: uint8ArrayToBase64(new Uint8Array(signature)),
     });
     if (downloadUrlResult?.serverError) {
@@ -49,6 +49,8 @@ export function DownloadFileButton({
       base64ToUint8Array(encryptedFileKey),
       localPrivateKey
     );
+
+    toast.info(`Download starting soon... ${fileName}`);
 
     await decryptAndSaveWithAESGCM(
       downloadUrl,

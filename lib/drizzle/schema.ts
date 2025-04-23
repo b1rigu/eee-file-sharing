@@ -1,4 +1,10 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  AnyPgColumn,
+} from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -50,17 +56,23 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at"),
 });
 
-export const uploadedFiles = pgTable("uploaded_files", {
+export const dataNodes = pgTable("data_nodes", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  fileKey: text("file_key").notNull(),
-  encryptedFileName: text("encrypted_file_name").notNull(),
-  encryptedFileType: text("encrypted_file_type").notNull(),
-  encryptedFileSize: text("encrypted_file_size").notNull(),
-  encryptedFileKey: text("encrypted_file_key").notNull(),
+  parentId: text("parent_id").references((): AnyPgColumn => dataNodes.id, {
+    onDelete: "cascade",
+  }),
+  type: text("type", { enum: ["file", "folder"] }).notNull(),
+  encryptedName: text("encrypted_name").notNull(),
+  encryptedKey: text("encrypted_key").notNull(),
   iv: text("iv").notNull(),
+
+  fileKey: text("file_key"),
+  encryptedType: text("encrypted_type"),
+  encryptedSize: text("encrypted_size"),
+
   createdAt: timestamp("created_at").notNull(),
 });
 

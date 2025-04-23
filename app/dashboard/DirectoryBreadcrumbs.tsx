@@ -9,16 +9,24 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { useSearchParams } from "next/navigation";
 import { usePrivateKey } from "@/components/private-key-context";
 import { Fragment } from "react";
+import { useDirectory } from "@/components/directory-provider";
 
 export function DirectoryBreadcrumbs() {
-  const searchParams = useSearchParams();
-  const dir = searchParams.get("dir") ?? "/";
-  const segments = dir.split("/").filter(Boolean);
+  const { segments } = useDirectory();
   const { localPrivateKey } = usePrivateKey();
+
+  let currentPath = "/";
+
+  const shouldCollapse = segments.length > 4;
+
+  const visibleSegments = shouldCollapse
+    ? [segments[0], "...", ...segments.slice(-3)]
+    : segments;
+
+  const truncate = (str: string, maxLength = 12) =>
+    str.length > maxLength ? str.slice(0, maxLength) + "…" : str;
 
   return (
     <div>
@@ -35,12 +43,32 @@ export function DirectoryBreadcrumbs() {
               <Link href="/dashboard">Home</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          <BreadcrumbSeparator />
+          <BreadcrumbSeparator>/</BreadcrumbSeparator>
 
-          {segments.map((segment, index) => {
-            let path = "/";
-            path += segment + "/";
-            const isLast = index === segments.length - 1;
+          {visibleSegments.map((segment, index) => {
+            const isEllipsis = segment === "...";
+            const isLast = index === visibleSegments.length - 1;
+
+            if (isEllipsis) {
+              return (
+                <Fragment key="ellipsis">
+                  <BreadcrumbItem>
+                    <span className="text-muted-foreground">...</span>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                </Fragment>
+              );
+            }
+
+            // If we're collapsing, we need to map index back to original index
+            const originalIndex = shouldCollapse
+              ? index === 0
+                ? 0
+                : segments.length - (visibleSegments.length - index)
+              : index;
+
+            currentPath =
+              "/" + segments.slice(0, originalIndex + 1).join("/") + "/";
 
             return (
               <Fragment key={index}>
@@ -52,7 +80,7 @@ export function DirectoryBreadcrumbs() {
                         "text-muted-foreground pointer-events-none opacity-70"
                       }`}
                     >
-                      {segment}
+                      {truncate(segment)}
                     </BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink
@@ -62,13 +90,13 @@ export function DirectoryBreadcrumbs() {
                       }`}
                       asChild
                     >
-                      <Link href={`?dir=${encodeURIComponent(path)}`}>
-                        {segment}
+                      <Link href={`?dir=${encodeURIComponent(currentPath)}`}>
+                        {truncate(segment)}
                       </Link>
                     </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
-                <BreadcrumbSeparator />
+                {!isLast && <BreadcrumbSeparator>/</BreadcrumbSeparator>}
               </Fragment>
             );
           })}

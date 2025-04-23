@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle";
-import { uploadedFiles } from "@/lib/drizzle/schema";
+import { dataNodes } from "@/lib/drizzle/schema";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
@@ -12,6 +12,8 @@ export const insertUploadedFileAction = authActionClient
   .metadata({ actionName: "insertUploadedFileAction" })
   .schema(
     z.object({
+      signature: z.string(),
+      parentId: z.string().nullable(),
       validUploads: z
         .array(
           z.object({
@@ -27,22 +29,26 @@ export const insertUploadedFileAction = authActionClient
     })
   )
   .action(async ({ ctx, parsedInput }) => {
-    const filesToInsert: (typeof uploadedFiles.$inferInsert)[] =
+    await checkSignature(parsedInput.signature, ctx.session.user.id);
+
+    const filesToInsert: (typeof dataNodes.$inferInsert)[] =
       parsedInput.validUploads.map((upload) => {
         return {
           id: uuidv4(),
           userId: ctx.session.user.id,
-          fileKey: upload.fileKey,
           iv: upload.iv,
-          encryptedFileKey: upload.encryptedFileKey,
-          encryptedFileName: upload.encryptedFileName,
-          encryptedFileSize: upload.encryptedFileSize,
-          encryptedFileType: upload.encryptedFileType,
+          parentId: parsedInput.parentId,
+          type: "file",
+          encryptedKey: upload.encryptedFileKey,
+          encryptedName: upload.encryptedFileName,
+          fileKey: upload.fileKey,
+          encryptedSize: upload.encryptedFileSize,
+          encryptedType: upload.encryptedFileType,
           createdAt: new Date(),
         };
       });
 
-    await db.insert(uploadedFiles).values(filesToInsert);
+    await db.insert(dataNodes).values(filesToInsert);
 
     revalidatePath("/dashboard");
   });

@@ -3,9 +3,9 @@
 import { DownloadFileButton } from "./DownloadFileButton";
 import { DeleteFileButton } from "./DeleteFileButton";
 import { formatFileSize } from "@/utils/utils";
-import { useUserFiles } from "@/components/user-files-context";
+import { useUserData } from "@/components/user-data-context";
 import { usePrivateKey } from "@/components/private-key-context";
-import { Cloud, Folder, Lock, MoreVertical } from "lucide-react";
+import { ChevronRight, Cloud, Folder, Lock, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -23,10 +23,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SecurityToggle } from "./SecurityToggle";
 import { UploadFilesButton } from "./UploadFilesButton";
+import { NewFolderButton } from "./NewFolderButton";
+import Link from "next/link";
+import { useDirectory } from "@/components/directory-provider";
 
 export function UserFiles() {
   const { localPrivateKey } = usePrivateKey();
-  const { userAvailableFiles, loading } = useUserFiles();
+  const { userAvailableData, loading } = useUserData();
+  const { dir } = useDirectory();
 
   return (
     <div className="w-full">
@@ -40,7 +44,7 @@ export function UserFiles() {
           </p>
           <SecurityToggle />
         </div>
-      ) : userAvailableFiles.length === 0 ? (
+      ) : userAvailableData.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <Cloud className="h-10 w-10 text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold">This folder is empty</h3>
@@ -48,10 +52,7 @@ export function UserFiles() {
             Upload files or create folders to organize your content
           </p>
           <div className="flex gap-2">
-            {/* <Button variant="outline">
-                <Folder className="mr-2 h-4 w-4" />
-                New Folder
-              </Button> */}
+            <NewFolderButton />
             <UploadFilesButton />
           </div>
         </div>
@@ -62,26 +63,46 @@ export function UserFiles() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Size</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Uploaded</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {userAvailableFiles.map((availableFile) => (
-                <TableRow key={availableFile.id}>
-                  <TableCell className="font-medium">
+              {userAvailableData.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
                     <div className="flex items-center">
-                      <span className="ml-2">
-                        {availableFile.encryptedFileName}
-                      </span>
+                      {item.type === "folder" && (
+                        <Folder className="h-4 w-4 ml-2" />
+                      )}
+                      {item.type === "folder" ? (
+                        <Link
+                          href={`/dashboard?dir=${encodeURIComponent(
+                            dir + item.id + "/"
+                          )}`}
+                          className="flex items-center hover:underline text-blue-600"
+                        >
+                          <p className="ml-2 font-semibold">
+                            {item.encryptedName}/
+                          </p>
+                        </Link>
+                      ) : (
+                        <p className="ml-2 font-semibold">
+                          {item.encryptedName}
+                        </p>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
-                    {formatFileSize(Number(availableFile.encryptedFileSize))}
+                    {item.type === "folder"
+                      ? "--"
+                      : formatFileSize(Number(item.encryptedSize!))}
                   </TableCell>
                   <TableCell>
-                    {availableFile.createdAt.toLocaleDateString()}
+                    {item.type === "folder" ? "--" : item.encryptedType!}
                   </TableCell>
+                  <TableCell>{item.createdAt.toLocaleString()}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -91,17 +112,18 @@ export function UserFiles() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {item.type === "file" && (
+                          <DropdownMenuItem>
+                            <DownloadFileButton
+                              fileId={item.id}
+                              fileName={item.encryptedName}
+                              fileSize={Number(item.encryptedSize)}
+                              encryptedFileKey={item.encryptedKey}
+                            />
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem>
-                          <DownloadFileButton
-                            fileId={availableFile.id}
-                            fileName={availableFile.encryptedFileName}
-                            fileSize={Number(availableFile.encryptedFileSize)}
-                            encryptedFileKey={availableFile.encryptedFileKey}
-                          />
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>Rename</DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <DeleteFileButton fileId={availableFile.id} />
+                          <DeleteFileButton dataId={item.id} />
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

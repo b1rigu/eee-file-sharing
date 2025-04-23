@@ -1,18 +1,17 @@
 "use client";
 
-import { deleteUploadedFileAction } from "@/actions/delete-uploaded-file";
+import { deleteUploadedDataAction } from "@/actions/delete-uploaded-data";
 import { usePrivateKey } from "@/components/private-key-context";
-import { Button } from "@/components/ui/button";
-import { useUserFiles } from "@/components/user-files-context";
+import { useUserData } from "@/components/user-data-context";
 import { signMessageWithRSA } from "@/utils/crypto/crypto";
 import { uint8ArrayToBase64 } from "@/utils/utils";
 import { toast } from "sonner";
 
-export function DeleteFileButton({ fileId }: { fileId: string }) {
+export function DeleteFileButton({ dataId }: { dataId: string }) {
   const { localPrivateKey } = usePrivateKey();
-  const { refetchFiles } = useUserFiles();
+  const { refetchData } = useUserData();
 
-  async function deleteFile() {
+  async function deleteData() {
     if (!localPrivateKey) {
       toast.error("You need to enable security first");
       return;
@@ -26,8 +25,8 @@ export function DeleteFileButton({ fileId }: { fileId: string }) {
 
     const signature = await signMessageWithRSA(localPrivateKey);
 
-    const result = await deleteUploadedFileAction({
-      fileId: fileId,
+    const result = await deleteUploadedDataAction({
+      dataId: dataId,
       signature: uint8ArrayToBase64(new Uint8Array(signature)),
     });
 
@@ -36,8 +35,12 @@ export function DeleteFileButton({ fileId }: { fileId: string }) {
       return;
     }
     toast.success("File deleted");
-    refetchFiles();
+    refetchData();
   }
 
-  return <div className="w-full h-full" onClick={deleteFile}>Delete</div>;
+  return (
+    <div className="w-full h-full" onClick={deleteData}>
+      Delete
+    </div>
+  );
 }

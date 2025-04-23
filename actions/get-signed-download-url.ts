@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/drizzle";
-import { uploadedFiles } from "@/lib/drizzle/schema";
+import { dataNodes } from "@/lib/drizzle/schema";
 import { authActionClient } from "@/lib/safe-action";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -14,28 +14,32 @@ export const getSignedDownloadUrlAction = authActionClient
   .metadata({ actionName: "getSignedDownloadUrlAction" })
   .schema(
     z.object({
-      fileId: z.string(),
+      dataId: z.string(),
       signature: z.string(),
     })
   )
-  .action(async ({ ctx, parsedInput: { fileId, signature } }) => {
+  .action(async ({ ctx, parsedInput: { dataId, signature } }) => {
     await checkSignature(signature, ctx.session.user.id);
 
-    const uploadedFile = await db.query.uploadedFiles.findFirst({
-      where: eq(uploadedFiles.id, fileId),
+    const uploadedData = await db.query.dataNodes.findFirst({
+      where: eq(dataNodes.id, dataId),
     });
 
-    if (!uploadedFile) {
+    if (!uploadedData) {
       throw new Error("File not found");
     }
 
-    if (uploadedFile.userId !== ctx.session.user.id) {
+    if (uploadedData.userId !== ctx.session.user.id) {
       throw new Error("You do not have permission to download this file");
+    }
+
+    if (uploadedData.type !== "file") {
+      throw new Error("This is not a file");
     }
 
     const putCommand = new GetObjectCommand({
       Bucket: process.env.S3_BUCKET_NAME!,
-      Key: uploadedFile.fileKey,
+      Key: uploadedData.fileKey!,
     });
 
     const url = await getSignedUrl(s3Client, putCommand, {
