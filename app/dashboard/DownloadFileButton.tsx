@@ -14,7 +14,7 @@ import {
 } from "@/utils/utils";
 import { toast } from "sonner";
 
-export function DecryptFile({
+export function DownloadFileButton({
   fileId,
   fileName,
   fileSize,
@@ -59,11 +59,8 @@ export function DecryptFile({
   }
 
   return (
-    <button
-      className="cursor-pointer border rounded-2xl p-2 hover:bg-gray-300 dark:hover:bg-gray-800"
-      onClick={downloadFile}
-    >
+    <div className="w-full h-full" onClick={downloadFile}>
       Download
-    </button>
+    </div>
   );
 }

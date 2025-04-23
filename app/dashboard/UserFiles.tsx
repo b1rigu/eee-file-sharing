@@ -1,6 +1,6 @@
 "use client";
 
-import { DecryptFile } from "./DecryptFile";
+import { DownloadFileButton } from "./DownloadFileButton";
 import { DeleteFileButton } from "./DeleteFileButton";
 import { formatFileSize } from "@/utils/utils";
 import { useUserFiles } from "@/components/user-files-context";
@@ -91,13 +91,15 @@ export function UserFiles() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {/* {!file.isFolder && (
-                          <DropdownMenuItem>Download</DropdownMenuItem>
-                        )} */}
+                        <DropdownMenuItem>
+                          <DownloadFileButton
+                            fileId={availableFile.id}
+                            fileName={availableFile.encryptedFileName}
+                            fileSize={Number(availableFile.encryptedFileSize)}
+                            encryptedFileKey={availableFile.encryptedFileKey}
+                          />
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Rename</DropdownMenuItem>
-                        {/* {!file.isFolder && (
-                          <DropdownMenuItem>Share</DropdownMenuItem>
-                        )} */}
                         <DropdownMenuItem>
                           <DeleteFileButton fileId={availableFile.id} />
                         </DropdownMenuItem>
