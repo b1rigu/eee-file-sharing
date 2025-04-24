@@ -154,7 +154,8 @@ export async function encryptBlobWithMetaAESGCM(
 
 export async function decryptAndReturnObjectUrlWithAESGCM(
   fileUrl: string,
-  base64AesKey: string
+  base64AesKey: string,
+  fileType: string
 ) {
   const encryptedChunkSize = IV_LENGTH + ENCRYPTION_CHUNK_SIZE + 16;
   const response = await fetch(fileUrl);
@@ -194,7 +195,7 @@ export async function decryptAndReturnObjectUrlWithAESGCM(
     pos += chunk.length;
   }
 
-  return URL.createObjectURL(new Blob([full]));
+  return URL.createObjectURL(new Blob([full], { type: fileType }));
 }
 
 export async function decryptAndSaveWithAESGCM(

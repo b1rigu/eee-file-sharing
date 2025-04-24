@@ -130,7 +130,8 @@ export function FilePreviewDialog({
         const { downloadUrl, aesKeyBuffer } = await getDownloadUrlData();
         const objectUrl = await decryptAndReturnObjectUrlWithAESGCM(
           downloadUrl,
-          arrayBufferToBase64(aesKeyBuffer)
+          arrayBufferToBase64(aesKeyBuffer),
+          fileObj.fileType
         );
         urlRef.current = objectUrl;
       } catch (error) {
