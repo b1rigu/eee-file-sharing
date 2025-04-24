@@ -1,6 +1,15 @@
 "use client";
 
-import { DndContext, DragEndEvent, DragStartEvent } from "@dnd-kit/core";
+import {
+  CollisionDetection,
+  DndContext,
+  DragEndEvent,
+  DragStartEvent,
+  PointerSensor,
+  rectIntersection,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
 import { createContext, useContext, useState } from "react";
 import { usePrivateKey } from "./private-key-context";
 import { toast } from "sonner";
@@ -18,6 +27,29 @@ const DragAndDropContext = createContext<DragAndDropContextType | undefined>(
   undefined
 );
 
+const fixCursorSnapOffset: CollisionDetection = (args) => {
+  // Bail out if keyboard activated
+  if (!args.pointerCoordinates) {
+    return rectIntersection(args);
+  }
+  const { x, y } = args.pointerCoordinates;
+  const { width, height } = args.collisionRect;
+  const updated = {
+    ...args,
+    // The collision rectangle is broken when using snapCenterToCursor. Reset
+    // the collision rectangle based on pointer location and overlay size.
+    collisionRect: {
+      width,
+      height,
+      bottom: y + height / 2,
+      left: x - width / 2,
+      right: x + width / 2,
+      top: y - height / 2,
+    },
+  };
+  return rectIntersection(updated);
+};
+
 export function DragAndDropProvider({
   children,
 }: {
@@ -26,6 +58,14 @@ export function DragAndDropProvider({
   const [activeId, setActiveId] = useState<string | null>(null);
   const { localPrivateKey } = usePrivateKey();
   const { refetchData } = useUserData();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 20,
+      },
+    })
+  );
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
@@ -83,7 +123,12 @@ export function DragAndDropProvider({
         activeId,
       }}
     >
-      <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        collisionDetection={fixCursorSnapOffset}
+      >
         {children}
       </DndContext>
     </DragAndDropContext.Provider>

@@ -30,13 +30,6 @@ export function SingleRow({
   const { selectedRows, handleSelect } = useSelectedRows();
   const draggable = useDraggable({ id: item.id, disabled: !isDraggable });
   const droppable = useDroppable({ id: item.id, disabled: !isDroppable });
-  const style =
-    isDraggable && draggable.transform
-      ? {
-          transform: `translate3d(${draggable.transform.x}px, ${draggable.transform.y}px, 0)`,
-        }
-      : undefined;
-  const isHovered = isDroppable && droppable.isOver;
 
   return (
     <TableRow
@@ -45,8 +38,10 @@ export function SingleRow({
         if (isDroppable) droppable.setNodeRef(node);
       }}
       {...(isDraggable ? draggable.attributes : {})}
-      style={style}
-      className={isHovered ? "bg-muted" : ""}
+      {...(isDraggable ? draggable.listeners : {})}
+      className={`transition-opacity duration-150 ${
+        draggable.isDragging ? "bg-muted opacity-50 pointer-events-none" : ""
+      } ${droppable.isOver ? "bg-muted" : ""}`}
     >
       <TableCell>
         <Checkbox
@@ -72,17 +67,15 @@ export function SingleRow({
           {item.type === "file" && <p>{item.encryptedName}</p>}
         </div>
       </TableCell>
-      <TableCell {...(isDraggable ? draggable.listeners : {})}>
+      <TableCell>
         {item.type === "folder"
           ? "--"
           : formatFileSize(Number(item.encryptedSize!))}
       </TableCell>
-      <TableCell {...(isDraggable ? draggable.listeners : {})}>
+      <TableCell>
         {item.type === "folder" ? "Folder" : item.encryptedType!}
       </TableCell>
-      <TableCell {...(isDraggable ? draggable.listeners : {})}>
-        {item.createdAt.toLocaleString()}
-      </TableCell>
+      <TableCell>{item.createdAt.toLocaleString()}</TableCell>
       <TableCell className="text-right">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

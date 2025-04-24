@@ -18,11 +18,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useSelectedRows } from "@/components/selected-rows-provider";
 import { SingleRow } from "./SingleRow";
 import { BackFolderButton } from "./BackFolderButton";
+import { useDragAndDrop } from "@/components/drag-and-drop-provider";
+import { DragOverlay } from "@dnd-kit/core";
+import { restrictToWindowEdges, snapCenterToCursor } from "@dnd-kit/modifiers";
 
 export function UserFiles() {
   const { localPrivateKey } = usePrivateKey();
   const { userAvailableData, loading } = useUserData();
   const { selectedRows, handleSelectAll } = useSelectedRows();
+  const { activeId } = useDragAndDrop();
+  const activeItem = userAvailableData.find((item) => item.id === activeId);
 
   return (
     <div className="w-full relative flex flex-col">
@@ -98,17 +103,15 @@ export function UserFiles() {
               )}
             </TableBody>
           </Table>
-          {/* <DragOverlay>
-            {activeItem ? (
-              <tr className="bg-white shadow-lg">
-                <td colSpan={2}>
-                  {activeItem.type === "folder" ? "📁" : "📄"}
-                </td>
-              </tr>
-            ) : null}
-          </DragOverlay> */}
         </div>
       )}
+      <DragOverlay modifiers={[snapCenterToCursor, restrictToWindowEdges]}>
+        {activeItem ? (
+          <div className="border drop-shadow-md px-8 py-2 text-nowrap bg-background rounded-2xl w-min cursor-grabbing">
+            <p>{activeItem.encryptedName}</p>
+          </div>
+        ) : null}
+      </DragOverlay>
     </div>
   );
 }
