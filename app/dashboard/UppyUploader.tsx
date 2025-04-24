@@ -2,7 +2,6 @@
 
 import Uppy, {
   BasePlugin,
-  Meta,
   Body,
   PluginOpts,
   UppyFile,
@@ -11,7 +10,6 @@ import Uppy, {
 import Dashboard from "@uppy/react/lib/Dashboard";
 import AwsS3, { type AwsBody } from "@uppy/aws-s3";
 import { RefObject, useEffect, useRef, useState } from "react";
-import GoldenRetriever from "@uppy/golden-retriever";
 
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
@@ -125,172 +123,167 @@ function createUppy(
 
   const MiB = 2 ** 20; // 1024 * 1024 bytes = 1 MB
 
-  return uppy
-    .use(AwsS3, {
-      shouldUseMultipart: (file) => {
-        return file.size! > 100 * MiB;
-      },
-      getChunkSize: (file) => {
-        return 10 * MiB;
-      },
-      async signPart(fileObject, options) {
-        if (!localPrivateKey.current) {
-          toast.error("You need to unlock");
-          throw new Error("You need to unlock");
-        }
+  return uppy.use(AwsS3, {
+    shouldUseMultipart: (file) => {
+      return file.size! > 100 * MiB;
+    },
+    getChunkSize: (file) => {
+      return 10 * MiB;
+    },
+    async signPart(fileObject, options) {
+      if (!localPrivateKey.current) {
+        toast.error("You need to unlock");
+        throw new Error("You need to unlock");
+      }
 
-        const signature = await signMessageWithRSA(localPrivateKey.current);
+      const signature = await signMessageWithRSA(localPrivateKey.current);
 
-        const result = await getPartSignedUploadUrlAction({
-          key: options.key,
-          uploadId: options.uploadId,
-          partNumber: options.partNumber,
-          signature: arrayBufferToBase64(signature),
-        });
+      const result = await getPartSignedUploadUrlAction({
+        key: options.key,
+        uploadId: options.uploadId,
+        partNumber: options.partNumber,
+        signature: arrayBufferToBase64(signature),
+      });
 
-        if (result?.serverError) {
-          toast.error(result.serverError);
-          throw new Error(result.serverError);
-        }
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        throw new Error(result.serverError);
+      }
 
-        const data = result?.data!;
-        return data;
-      },
-      async createMultipartUpload(file) {
-        if (!localPrivateKey.current) {
-          toast.error("You need to unlock");
-          throw new Error("You need to unlock");
-        }
+      const data = result?.data!;
+      return data;
+    },
+    async createMultipartUpload(file) {
+      if (!localPrivateKey.current) {
+        toast.error("You need to unlock");
+        throw new Error("You need to unlock");
+      }
 
-        const signature = await signMessageWithRSA(localPrivateKey.current);
+      const signature = await signMessageWithRSA(localPrivateKey.current);
 
-        const uppyFile = uppy.getFile(file.id);
-        const splitted = uppyFile.name?.split(".");
-        const extension =
-          splitted && splitted.length > 1
-            ? splitted[splitted.length - 1]
-            : null;
+      const uppyFile = uppy.getFile(file.id);
+      const splitted = uppyFile.name?.split(".");
+      const extension =
+        splitted && splitted.length > 1 ? splitted[splitted.length - 1] : null;
 
-        const result = await createMultipartUploadAction({
-          fileExtension: extension,
-          signature: arrayBufferToBase64(signature),
-          parentId: currentDirRef.current,
-          nameHash: uppyFile.meta.nameHash,
-        });
+      const result = await createMultipartUploadAction({
+        fileExtension: extension,
+        signature: arrayBufferToBase64(signature),
+        parentId: currentDirRef.current,
+        nameHash: uppyFile.meta.nameHash,
+      });
 
-        if (result?.serverError) {
-          toast.error(result.serverError);
-          throw new Error(result.serverError);
-        }
-        const data = result?.data!;
-        return data;
-      },
-      async listParts(fileObject, options) {
-        if (!localPrivateKey.current) {
-          toast.error("You need to unlock");
-          throw new Error("You need to unlock");
-        }
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        throw new Error(result.serverError);
+      }
+      const data = result?.data!;
+      return data;
+    },
+    async listParts(fileObject, options) {
+      if (!localPrivateKey.current) {
+        toast.error("You need to unlock");
+        throw new Error("You need to unlock");
+      }
 
-        const signature = await signMessageWithRSA(localPrivateKey.current);
+      const signature = await signMessageWithRSA(localPrivateKey.current);
 
-        const result = await listUploadPartsAction({
-          key: options.key,
-          uploadId: options.uploadId,
-          signature: arrayBufferToBase64(signature),
-        });
-        if (result?.serverError) {
-          toast.error(result.serverError);
-          throw new Error(result.serverError);
-        }
-        const data = result?.data!;
-        return data;
-      },
-      async abortMultipartUpload(fileObject, options) {
-        if (!localPrivateKey.current) {
-          toast.error("You need to unlock");
-          throw new Error("You need to unlock");
-        }
+      const result = await listUploadPartsAction({
+        key: options.key,
+        uploadId: options.uploadId,
+        signature: arrayBufferToBase64(signature),
+      });
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        throw new Error(result.serverError);
+      }
+      const data = result?.data!;
+      return data;
+    },
+    async abortMultipartUpload(fileObject, options) {
+      if (!localPrivateKey.current) {
+        toast.error("You need to unlock");
+        throw new Error("You need to unlock");
+      }
 
-        const signature = await signMessageWithRSA(localPrivateKey.current);
+      const signature = await signMessageWithRSA(localPrivateKey.current);
 
-        const result = await abortMultipartUploadAction({
-          key: options.key,
-          uploadId: options.uploadId,
-          signature: arrayBufferToBase64(signature),
-        });
-        if (result?.serverError) {
-          toast.error(result.serverError);
-          throw new Error(result.serverError);
-        }
-      },
-      async completeMultipartUpload(fileObject, options) {
-        if (!localPrivateKey.current) {
-          toast.error("You need to unlock");
-          throw new Error("You need to unlock");
-        }
+      const result = await abortMultipartUploadAction({
+        key: options.key,
+        uploadId: options.uploadId,
+        signature: arrayBufferToBase64(signature),
+      });
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        throw new Error(result.serverError);
+      }
+    },
+    async completeMultipartUpload(fileObject, options) {
+      if (!localPrivateKey.current) {
+        toast.error("You need to unlock");
+        throw new Error("You need to unlock");
+      }
 
-        const signature = await signMessageWithRSA(localPrivateKey.current);
+      const signature = await signMessageWithRSA(localPrivateKey.current);
 
-        const result = await completeMultipartUploadAction({
-          key: options.key,
-          uploadId: options.uploadId,
-          parts: options.parts.map((part) => {
-            return {
-              PartNumber: part.PartNumber!,
-              ETag: part.ETag!,
-            };
-          }),
-          signature: arrayBufferToBase64(signature),
-        });
-        if (result?.serverError) {
-          toast.error(result.serverError);
-          throw new Error(result.serverError);
-        }
-        const data = result?.data!;
-        uppy.setFileMeta(fileObject.id, {
-          fileKey: options.key,
-        } as RequiredMetaFields);
+      const result = await completeMultipartUploadAction({
+        key: options.key,
+        uploadId: options.uploadId,
+        parts: options.parts.map((part) => {
+          return {
+            PartNumber: part.PartNumber!,
+            ETag: part.ETag!,
+          };
+        }),
+        signature: arrayBufferToBase64(signature),
+      });
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        throw new Error(result.serverError);
+      }
+      const data = result?.data!;
+      uppy.setFileMeta(fileObject.id, {
+        fileKey: options.key,
+      } as RequiredMetaFields);
 
-        return data;
-      },
-      async getUploadParameters(fileObject, options) {
-        if (!localPrivateKey.current) {
-          toast.error("You need to unlock");
-          throw new Error("You need to unlock");
-        }
+      return data;
+    },
+    async getUploadParameters(fileObject, options) {
+      if (!localPrivateKey.current) {
+        toast.error("You need to unlock");
+        throw new Error("You need to unlock");
+      }
 
-        const signature = await signMessageWithRSA(localPrivateKey.current);
+      const signature = await signMessageWithRSA(localPrivateKey.current);
 
-        const uppyFile = uppy.getFile(fileObject.id);
-        const splitted = uppyFile.name?.split(".");
-        const extension =
-          splitted && splitted.length > 1
-            ? splitted[splitted.length - 1]
-            : null;
+      const uppyFile = uppy.getFile(fileObject.id);
+      const splitted = uppyFile.name?.split(".");
+      const extension =
+        splitted && splitted.length > 1 ? splitted[splitted.length - 1] : null;
 
-        const result = await getSignedUploadUrlAction({
-          fileExtension: extension,
-          signature: arrayBufferToBase64(signature),
-          parentId: currentDirRef.current,
-          nameHash: uppyFile.meta.nameHash,
-        });
-        if (result?.serverError) {
-          toast.error(result.serverError);
-          throw new Error(result.serverError);
-        }
-        const signedUploadData = result?.data!;
+      const result = await getSignedUploadUrlAction({
+        fileExtension: extension,
+        signature: arrayBufferToBase64(signature),
+        parentId: currentDirRef.current,
+        nameHash: uppyFile.meta.nameHash,
+      });
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        throw new Error(result.serverError);
+      }
+      const signedUploadData = result?.data!;
 
-        uppy.setFileMeta(fileObject.id, {
-          fileKey: signedUploadData.filePath,
-        } as RequiredMetaFields);
+      uppy.setFileMeta(fileObject.id, {
+        fileKey: signedUploadData.filePath,
+      } as RequiredMetaFields);
 
-        return {
-          method: "PUT",
-          url: signedUploadData.url,
-        };
-      },
-    })
-    .use(GoldenRetriever, { serviceWorker: true });
+      return {
+        method: "PUT",
+        url: signedUploadData.url,
+      };
+    },
+  });
+  // .use(GoldenRetriever, { serviceWorker: true });
 }
 
 export function UppyUploader() {
@@ -315,24 +308,32 @@ export function UppyUploader() {
   useEffect(() => {
     if (!uppy) return;
 
-    async function handleFileUploadComplete(
+    console.log("hello");
+
+    function handleFileUploadComplete(
       result: UploadResult<RequiredMetaFields, AwsBody>
     ) {
       const { successful = [], failed } = result;
 
       if (successful.length === 0) return;
 
-      const validUploads = successful.map((file) => {
-        return {
-          fileKey: file.meta.fileKey,
-          encryptedFileName: file.meta.encryptedFileName,
-          encryptedFileType: file.meta.encryptedFileType,
-          encryptedFileSize: file.meta.encryptedFileSize,
-          encryptedFileKey: file.meta.encryptedAesKey,
-          iv: file.meta.iv,
-          nameHash: file.meta.nameHash,
-        };
-      });
+      toast.success(`${successful.length} files uploaded successfully!`);
+    }
+
+    async function handleFileUploadSuccess(
+      uppyFile: UppyFile<RequiredMetaFields, AwsBody> | undefined
+    ) {
+      if (!uppyFile) return;
+
+      const validUpload = {
+        fileKey: uppyFile.meta.fileKey,
+        encryptedFileName: uppyFile.meta.encryptedFileName,
+        encryptedFileType: uppyFile.meta.encryptedFileType,
+        encryptedFileSize: uppyFile.meta.encryptedFileSize,
+        encryptedFileKey: uppyFile.meta.encryptedAesKey,
+        iv: uppyFile.meta.iv,
+        nameHash: uppyFile.meta.nameHash,
+      };
 
       if (!localPrivateKeyRef.current) {
         toast.error("You need to unlock first");
@@ -344,7 +345,7 @@ export function UppyUploader() {
       const insertResult = await insertUploadedFileAction({
         parentId: currentDirRef.current,
         signature: arrayBufferToBase64(signature),
-        validUploads: validUploads,
+        validUploads: [validUpload],
       });
 
       if (insertResult?.serverError) {
@@ -353,13 +354,14 @@ export function UppyUploader() {
       }
 
       refetchData();
-      toast.success(`${validUploads.length} files uploaded successfully!`);
     }
 
     uppy.on("complete", handleFileUploadComplete);
+    uppy.on("upload-success", handleFileUploadSuccess);
 
     return () => {
       uppy.off("complete", handleFileUploadComplete);
+      uppy.off("upload-success", handleFileUploadSuccess);
     };
   }, [uppy, refetchData]);
 

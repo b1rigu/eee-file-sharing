@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import { RegisterServiceWorker } from "@/components/register-service-worker";
 import { ThemeProvider } from "@/components/theme-provider";
 import { HeaderAuth } from "@/components/HeaderAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -51,7 +50,6 @@ export default function RootLayout({
           </div>
           <div id="preview-portal" className="pointer-events-auto"></div>
         </ThemeProvider>
-        <RegisterServiceWorker />
         <Toaster richColors closeButton />
       </body>
     </html>

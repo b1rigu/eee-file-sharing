@@ -25,7 +25,6 @@
     "@uppy/aws-s3": "^4.2.3",
     "@uppy/core": "^4.4.4",
     "@uppy/dashboard": "^4.3.3",
-    "@uppy/golden-retriever": "^4.1.1",
     "@uppy/react": "^4.2.3",
     "axios": "^1.8.4",
     "better-auth": "^1.2.7",
