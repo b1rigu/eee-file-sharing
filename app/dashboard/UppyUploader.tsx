@@ -368,7 +368,7 @@ export function UppyUploader() {
   return (
     <Dashboard
       className="w-full"
-      // fileManagerSelectionType="both" // TODO: implement folder upload
+      fileManagerSelectionType="both" // TODO: implement folder upload
       showProgressDetails={true}
       theme={theme === "dark" ? "dark" : "light"}
       uppy={uppy}
