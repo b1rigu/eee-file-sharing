@@ -20,8 +20,8 @@ export async function HeaderAuth() {
     </div>
   ) : (
     <div className="flex gap-2">
-      <Button asChild aria-label="Нэвтрэх">
-        <Link href="/sign-in">Нэвтрэх</Link>
+      <Button asChild aria-label="Login">
+        <Link href="/sign-in">Login</Link>
       </Button>
     </div>
   );

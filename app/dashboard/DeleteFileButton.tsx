@@ -7,26 +7,24 @@ import { signMessageWithRSA } from "@/utils/crypto/crypto";
 import { uint8ArrayToBase64 } from "@/utils/utils";
 import { toast } from "sonner";
 
-export function DeleteFileButton({ dataId }: { dataId: string }) {
+export function DeleteDataButton({ dataId }: { dataId: string }) {
   const { localPrivateKey } = usePrivateKey();
   const { refetchData } = useUserData();
 
   async function deleteData() {
     if (!localPrivateKey) {
-      toast.error("You need to enable security first");
+      toast.error("You need to unlock");
       return;
     }
 
-    if (
-      !confirm("Are you sure you want to delete this file?. This is permanent.")
-    ) {
+    if (!confirm("Are you sure you want to delete this?. This is permanent.")) {
       return;
     }
 
     const signature = await signMessageWithRSA(localPrivateKey);
 
     const result = await deleteUploadedDataAction({
-      dataId: dataId,
+      dataIds: [dataId],
       signature: uint8ArrayToBase64(new Uint8Array(signature)),
     });
 
@@ -34,7 +32,7 @@ export function DeleteFileButton({ dataId }: { dataId: string }) {
       toast.error(result.serverError);
       return;
     }
-    toast.success("File deleted");
+    toast.success("Deleted");
     refetchData();
   }
 

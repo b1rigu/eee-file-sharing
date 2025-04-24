@@ -5,12 +5,9 @@ import {
   ENCRYPTION_CHUNK_SIZE,
   SALT_LENGTH,
   SIGN_TEST_MESSAGE,
+  SHA_512_ALGORITHM,
 } from "./consts";
-import {
-  arrayBufferToBase64,
-  base64ToUint8Array,
-  uint8ArrayToBase64,
-} from "../utils";
+import { arrayBufferToBase64, base64ToUint8Array, uint8ArrayToBase64 } from "../utils";
 import {
   encryptBufferWithRSAPublicKey,
   exportRSAPrivateKey,
@@ -35,27 +32,24 @@ function generateSalt() {
   return crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
 }
 
-export async function encryptTextWithPublicKey(
-  text: string,
-  RSAPublicKey: string
-) {
+export async function generateTextHash(text: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
+  const hashBuffer = await crypto.subtle.digest(SHA_512_ALGORITHM, data);
+  return arrayBufferToBase64(hashBuffer);
+}
+
+export async function encryptTextWithPublicKey(text: string, RSAPublicKey: string) {
   const aesKey = await generateAESGCMKey();
   const textBuffer = new TextEncoder().encode(text);
   const iv = generateIV();
   const ivString = uint8ArrayToBase64(iv);
 
   const rawKey = await exportAESKey(aesKey);
-  const encryptedAesKeyBuffer = await encryptBufferWithRSAPublicKey(
-    rawKey,
-    RSAPublicKey
-  );
+  const encryptedAesKeyBuffer = await encryptBufferWithRSAPublicKey(rawKey, RSAPublicKey);
   const encryptedAesKey = arrayBufferToBase64(encryptedAesKeyBuffer);
 
-  const encryptedTextBuffer = await encryptBufferWithAESGCM(
-    iv,
-    aesKey,
-    textBuffer
-  );
+  const encryptedTextBuffer = await encryptBufferWithAESGCM(iv, aesKey, textBuffer);
   const encryptedText = arrayBufferToBase64(encryptedTextBuffer);
 
   return {
@@ -77,11 +71,7 @@ export async function encryptBlobWithMetaAESGCM(
   const fileBuffer = await blob.arrayBuffer();
   const fileBytes = new Uint8Array(fileBuffer);
 
-  for (
-    let offset = 0;
-    offset < fileBytes.length;
-    offset += ENCRYPTION_CHUNK_SIZE
-  ) {
+  for (let offset = 0; offset < fileBytes.length; offset += ENCRYPTION_CHUNK_SIZE) {
     const chunk = fileBytes.slice(offset, offset + ENCRYPTION_CHUNK_SIZE);
 
     const iv = generateIV();
@@ -100,10 +90,7 @@ export async function encryptBlobWithMetaAESGCM(
   const encryptedBlob = new Blob(encryptedChunks);
 
   const rawKey = await exportAESKey(aesKey);
-  const encryptedAesKeyBuffer = await encryptBufferWithRSAPublicKey(
-    rawKey,
-    RSAPublicKey
-  );
+  const encryptedAesKeyBuffer = await encryptBufferWithRSAPublicKey(rawKey, RSAPublicKey);
   const encryptedAesKey = arrayBufferToBase64(encryptedAesKeyBuffer);
 
   const metaIV = generateIV();
@@ -131,6 +118,8 @@ export async function encryptBlobWithMetaAESGCM(
 
   const iv = uint8ArrayToBase64(metaIV);
 
+  const nameHash = await generateTextHash(fileName);
+
   return {
     encryptedAesKey,
     iv,
@@ -138,6 +127,7 @@ export async function encryptBlobWithMetaAESGCM(
     encryptedFileName,
     encryptedFileType,
     encryptedFileSize,
+    nameHash,
   };
 }
 
@@ -174,11 +164,7 @@ export async function decryptAndSaveWithAESGCM(
         const ciphertextWithTag = currentChunk.slice(IV_LENGTH);
 
         try {
-          const decrypted = await decryptBufferWithAESGCM(
-            iv,
-            aesKey,
-            ciphertextWithTag
-          );
+          const decrypted = await decryptBufferWithAESGCM(iv, aesKey, ciphertextWithTag);
 
           controller.enqueue(new Uint8Array(decrypted));
         } catch (e) {
@@ -197,11 +183,7 @@ export async function decryptAndSaveWithAESGCM(
           const ciphertextWithTag = leftover.slice(IV_LENGTH);
 
           try {
-            const decrypted = await decryptBufferWithAESGCM(
-              iv,
-              aesKey,
-              ciphertextWithTag
-            );
+            const decrypted = await decryptBufferWithAESGCM(iv, aesKey, ciphertextWithTag);
             controller.enqueue(new Uint8Array(decrypted));
           } catch (e) {
             console.error("Final chunk decryption failed", e);
@@ -232,9 +214,7 @@ function concatUint8Arrays(a: Uint8Array, b: Uint8Array) {
   return result;
 }
 
-export async function signMessageWithRSA(
-  RSAPrivateKey: string
-): Promise<ArrayBuffer> {
+export async function signMessageWithRSA(RSAPrivateKey: string): Promise<ArrayBuffer> {
   const importedPrivateKey = await importRSAPrivateKeyToSign(RSAPrivateKey);
   const data = new TextEncoder().encode(SIGN_TEST_MESSAGE);
   return await crypto.subtle.sign(
@@ -247,10 +227,7 @@ export async function signMessageWithRSA(
   );
 }
 
-export async function verifyRSASignedMessage(
-  signature: string,
-  RSAPublicKey: string
-) {
+export async function verifyRSASignedMessage(signature: string, RSAPublicKey: string) {
   const importedPublicKey = await importRSAPublicKeyToVerify(RSAPublicKey);
 
   const isValid = await crypto.subtle.verify(
@@ -267,19 +244,12 @@ export async function verifyRSASignedMessage(
 }
 
 async function getKeyFromPassword(password: string) {
-  return await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
+  return await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, [
+    "deriveKey",
+  ]);
 }
 
-export async function encryptPrivateKeyWithPassword(
-  privateKey: CryptoKey,
-  password: string
-) {
+export async function encryptPrivateKeyWithPassword(privateKey: CryptoKey, password: string) {
   const exportedPrivateKey = await exportRSAPrivateKey(privateKey);
 
   const salt = generateSalt();
@@ -289,11 +259,7 @@ export async function encryptPrivateKeyWithPassword(
 
   const aesKey = await deriveKeyFromPasswordKey("encrypt", passwordKey, salt);
 
-  const encrypted = await encryptBufferWithAESGCM(
-    iv,
-    aesKey,
-    exportedPrivateKey
-  );
+  const encrypted = await encryptBufferWithAESGCM(iv, aesKey, exportedPrivateKey);
 
   return {
     encryptedPrivateKey: uint8ArrayToBase64(new Uint8Array(encrypted)),
@@ -314,11 +280,7 @@ export async function decryptPrivateKeyWithPassword(
 
   const passwordKey = await getKeyFromPassword(password);
 
-  const aesKey = await deriveKeyFromPasswordKey(
-    "decrypt",
-    passwordKey,
-    saltBytes
-  );
+  const aesKey = await deriveKeyFromPasswordKey("decrypt", passwordKey, saltBytes);
 
   const decryptedKeyBuffer = await decryptBufferWithAESGCM(
     ivBytes,
@@ -326,7 +288,5 @@ export async function decryptPrivateKeyWithPassword(
     encryptedPrivateKeyBytes
   );
 
-  return await importRSAPrivateKeyToDecrypt(
-    arrayBufferToBase64(decryptedKeyBuffer)
-  );
+  return await importRSAPrivateKeyToDecrypt(arrayBufferToBase64(decryptedKeyBuffer));
 }

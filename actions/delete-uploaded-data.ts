@@ -3,50 +3,57 @@
 import { db } from "@/lib/drizzle";
 import { dataNodes } from "@/lib/drizzle/schema";
 import { authActionClient } from "@/lib/safe-action";
-import { eq, sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { checkSignature } from "./utils";
-import { DeleteObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "@/lib/s3";
 
 export const deleteUploadedDataAction = authActionClient
   .metadata({ actionName: "deleteUploadedDataAction" })
   .schema(
     z.object({
-      dataId: z.string(),
+      dataIds: z.array(z.string()).min(1),
       signature: z.string(),
     })
   )
-  .action(async ({ ctx, parsedInput: { dataId, signature } }) => {
+  .action(async ({ ctx, parsedInput: { dataIds, signature } }) => {
     await checkSignature(signature, ctx.session.user.id);
 
-    const uploadedData = await db.query.dataNodes.findFirst({
-      where: eq(dataNodes.id, dataId),
-    });
+    const uploadedDataList = await db
+      .select()
+      .from(dataNodes)
+      .where(inArray(dataNodes.id, dataIds));
 
-    if (!uploadedData) {
-      throw new Error("Data not found");
+    if (uploadedDataList.length !== dataIds.length) {
+      throw new Error("Wrong ids provided or server error");
     }
 
-    if (uploadedData.userId !== ctx.session.user.id) {
-      throw new Error("You do not have permission to delete this");
+    if (uploadedDataList.some((data) => data.userId !== ctx.session.user.id)) {
+      throw new Error("You do not have permission to delete some of these");
     }
 
-    if (uploadedData.type === "file") {
-      const deleteCommand = new DeleteObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME!,
-        Key: uploadedData.fileKey!,
-      });
+    const dataWithTypeFile = uploadedDataList.filter((data) => data.type === "file");
 
-      await s3Client.send(deleteCommand);
-    } else {
+    const dataWithTypeFolder = uploadedDataList.filter((data) => data.type === "folder");
+
+    let keysToDelete: string[] = [];
+
+    if (dataWithTypeFile.length > 0) {
+      keysToDelete = keysToDelete.concat(dataWithTypeFile.map((data) => data.fileKey!));
+    }
+
+    if (dataWithTypeFolder.length > 0) {
       const result = await db.execute(
         sql`
           WITH RECURSIVE descendants AS (
             SELECT id, type, file_key
             FROM data_nodes
-            WHERE id = ${dataId}
+            WHERE id IN (${sql.join(
+              dataWithTypeFolder.map((data) => sql`${data.id}`),
+              sql`, `
+            )})
       
             UNION ALL
       
@@ -68,19 +75,21 @@ export const deleteUploadedDataAction = authActionClient
         .filter((node) => node.type === "file" && node.file_key)
         .map((node) => node.file_key!);
 
-      if (fileKeysToDelete.length > 0) {
-        const deleteCommand = new DeleteObjectsCommand({
-          Bucket: process.env.S3_BUCKET_NAME!,
-          Delete: {
-            Objects: fileKeysToDelete.map((key) => ({ Key: key })),
-          },
-        });
-
-        await s3Client.send(deleteCommand);
-      }
+      keysToDelete = keysToDelete.concat(fileKeysToDelete);
     }
 
-    await db.delete(dataNodes).where(eq(dataNodes.id, dataId));
+    if (keysToDelete.length > 0) {
+      const deleteCommand = new DeleteObjectsCommand({
+        Bucket: process.env.S3_BUCKET_NAME!,
+        Delete: {
+          Objects: keysToDelete.map((key) => ({ Key: key })),
+        },
+      });
+
+      await s3Client.send(deleteCommand);
+    }
+
+    await db.delete(dataNodes).where(inArray(dataNodes.id, dataIds));
 
     revalidatePath("/dashboard");
   });

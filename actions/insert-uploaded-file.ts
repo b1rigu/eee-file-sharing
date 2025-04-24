@@ -23,6 +23,7 @@ export const insertUploadedFileAction = authActionClient
             encryptedFileName: z.string(),
             encryptedFileType: z.string(),
             encryptedFileSize: z.string(),
+            nameHash: z.string(),
           })
         )
         .min(1),
@@ -31,8 +32,8 @@ export const insertUploadedFileAction = authActionClient
   .action(async ({ ctx, parsedInput }) => {
     await checkSignature(parsedInput.signature, ctx.session.user.id);
 
-    const filesToInsert: (typeof dataNodes.$inferInsert)[] =
-      parsedInput.validUploads.map((upload) => {
+    const filesToInsert: (typeof dataNodes.$inferInsert)[] = parsedInput.validUploads.map(
+      (upload) => {
         return {
           id: uuidv4(),
           userId: ctx.session.user.id,
@@ -44,9 +45,11 @@ export const insertUploadedFileAction = authActionClient
           fileKey: upload.fileKey,
           encryptedSize: upload.encryptedFileSize,
           encryptedType: upload.encryptedFileType,
+          nameHash: upload.nameHash,
           createdAt: new Date(),
         };
-      });
+      }
+    );
 
     await db.insert(dataNodes).values(filesToInsert);
 

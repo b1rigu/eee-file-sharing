@@ -4,6 +4,7 @@ import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
 import { s3Client } from "@/lib/s3";
 import { ListPartsCommand, Part } from "@aws-sdk/client-s3";
+import { checkSignature } from "./utils";
 
 export const listUploadPartsAction = authActionClient
   .metadata({ actionName: "listUploadPartsAction" })
@@ -11,9 +12,12 @@ export const listUploadPartsAction = authActionClient
     z.object({
       key: z.string(),
       uploadId: z.string().optional(),
+      signature: z.string(),
     })
   )
   .action(async ({ ctx, parsedInput }) => {
+    await checkSignature(parsedInput.signature, ctx.session.user.id);
+
     const parts: Part[] = [];
 
     async function listPartsPage(startsAt?: string) {

@@ -21,9 +21,7 @@ export function DirectoryBreadcrumbs() {
 
   const shouldCollapse = segments.length > 4;
 
-  const visibleSegments = shouldCollapse
-    ? [segments[0], "...", ...segments.slice(-3)]
-    : segments;
+  const visibleSegments = shouldCollapse ? [segments[0], "...", ...segments.slice(-3)] : segments;
 
   const truncate = (str: string, maxLength = 12) =>
     str.length > maxLength ? str.slice(0, maxLength) + "…" : str;
@@ -35,12 +33,16 @@ export function DirectoryBreadcrumbs() {
           <BreadcrumbItem>
             <BreadcrumbLink
               className={`${
-                !localPrivateKey &&
-                "text-muted-foreground pointer-events-none opacity-70"
+                !localPrivateKey && "text-muted-foreground pointer-events-none opacity-70"
               }`}
               asChild
             >
-              <Link href="/dashboard">Home</Link>
+              <Link
+                href="/dashboard"
+                className={`${segments.length === 0 ? "text-muted-foreground pointer-events-none" : "text-blue-500 underline"}`}
+              >
+                Home
+              </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator>/</BreadcrumbSeparator>
@@ -67,17 +69,15 @@ export function DirectoryBreadcrumbs() {
                 : segments.length - (visibleSegments.length - index)
               : index;
 
-            currentPath =
-              "/" + segments.slice(0, originalIndex + 1).join("/") + "/";
+            currentPath = "/" + segments.slice(0, originalIndex + 1).join("/") + "/";
 
             return (
               <Fragment key={index}>
                 <BreadcrumbItem>
                   {isLast ? (
                     <BreadcrumbPage
-                      className={`font-semibold ${
-                        !localPrivateKey &&
-                        "text-muted-foreground pointer-events-none opacity-70"
+                      className={`text-muted-foreground ${
+                        !localPrivateKey && "text-muted-foreground pointer-events-none opacity-70"
                       }`}
                     >
                       {truncate(segment)}
@@ -85,12 +85,11 @@ export function DirectoryBreadcrumbs() {
                   ) : (
                     <BreadcrumbLink
                       className={`${
-                        !localPrivateKey &&
-                        "text-muted-foreground pointer-events-none opacity-70"
+                        !localPrivateKey && "text-muted-foreground pointer-events-none opacity-70"
                       }`}
                       asChild
                     >
-                      <Link href={`?dir=${encodeURIComponent(currentPath)}`}>
+                      <Link className="text-blue-500 underline" href={`?dir=${encodeURIComponent(currentPath)}`}>
                         {truncate(segment)}
                       </Link>
                     </BreadcrumbLink>

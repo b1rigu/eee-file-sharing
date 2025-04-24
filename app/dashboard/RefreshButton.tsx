@@ -9,10 +9,8 @@ export function RefreshButton() {
   const { localPrivateKey } = usePrivateKey();
   const { refetchData, loading } = useUserData();
 
-  if (!localPrivateKey) return null;
-
   return (
-    <Button variant={"outline"} disabled={loading} onClick={refetchData}>
+    <Button variant={"outline"} disabled={loading || !localPrivateKey} onClick={refetchData}>
       <RefreshCcw className={`${loading ? "animate-spin" : ""}`} />
       Refresh
     </Button>
