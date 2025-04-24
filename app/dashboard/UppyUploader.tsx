@@ -317,6 +317,7 @@ export function UppyUploader() {
 
       if (successful.length === 0) return;
 
+      refetchData();
       toast.success(`${successful.length} files uploaded successfully!`);
     }
 
@@ -352,8 +353,6 @@ export function UppyUploader() {
         toast.error(insertResult.serverError);
         throw new Error(insertResult.serverError);
       }
-
-      refetchData();
     }
 
     uppy.on("complete", handleFileUploadComplete);
