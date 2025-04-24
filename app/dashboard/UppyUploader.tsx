@@ -72,8 +72,8 @@ class Encryption<
   async prepareUpload(fileIDs: string[]) {
     const userKeyResult = await getUserKeyAction();
     if (!userKeyResult || userKeyResult.serverError || !userKeyResult.data) {
-      toast.error("You need to enable security first");
-      throw new Error("You need to enable security first");
+      toast.error("You need to unlock");
+      throw new Error("You need to unlock");
     }
 
     const promises = fileIDs.map(async (fileID) => {

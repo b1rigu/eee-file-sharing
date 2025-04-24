@@ -32,7 +32,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          disableTransitionOnChange
+        >
           <div className="min-h-screen">
             <header className="w-full h-16 border-b border-2 px-4">
               <div className="h-full container mx-auto flex items-center justify-between">
@@ -43,10 +47,9 @@ export default function RootLayout({
                 </div>
               </div>
             </header>
-            <main className="container mx-auto p-4">
-              {children}
-            </main>
+            <main className="container mx-auto p-4">{children}</main>
           </div>
+          <div id="preview-portal" className="pointer-events-auto"></div>
         </ThemeProvider>
         <RegisterServiceWorker />
         <Toaster richColors closeButton />

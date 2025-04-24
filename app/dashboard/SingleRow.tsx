@@ -16,6 +16,7 @@ import { useSelectedRows } from "@/components/selected-rows-provider";
 import { dataNodes } from "@/lib/drizzle/schema";
 import Link from "next/link";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { FilePreviewDialog } from "@/components/FilePreviewDialog";
 
 export function SingleRow({
   item,
@@ -64,7 +65,22 @@ export function SingleRow({
               </Link>
             </>
           )}
-          {item.type === "file" && <p>{item.encryptedName}</p>}
+          {item.type === "file" && (
+            <FilePreviewDialog
+              uploadedFile={{
+                fileName: item.encryptedName,
+                fileType: item.encryptedType!,
+                fileSize: Number(item.encryptedSize),
+                fileId: item.id,
+                iv: item.iv,
+                encryptedKey: item.encryptedKey,
+              }}
+            >
+              <p className="hover:underline text-blue-500 cursor-pointer">
+                {item.encryptedName}
+              </p>
+            </FilePreviewDialog>
+          )}
         </div>
       </TableCell>
       <TableCell>

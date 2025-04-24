@@ -29,7 +29,7 @@ export function DownloadFileButton({
 
   async function downloadFile() {
     if (!localPrivateKey) {
-      toast.error("You need to enable security first");
+      toast.error("You need to unlock");
       return;
     }
 
