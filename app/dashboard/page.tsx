@@ -14,6 +14,7 @@ import { DeleteSelectedButton } from "./DeleteSelectedButton";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { DragAndDropProvider } from "@/components/drag-and-drop-provider";
 
 export default async function Dashboard() {
   const session = auth.api.getSession({
@@ -29,26 +30,30 @@ export default async function Dashboard() {
         <DirectoryProvider>
           <UserDataProvider>
             <SelectedRowsProvider>
-              <div className="flex flex-col gap-4 w-full">
-                <div className="flex items-center justify-center lg:justify-start gap-2">
-                  <h1 className="text-2xl lg:text-3xl font-bold">Storage Dashboard</h1>
-                  <HeaderBadge />
-                </div>
-
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-4 flex-wrap">
-                  <DirectoryBreadcrumbs />
-                  <div className="flex flex-row gap-2 shrink-0">
-                    <RefreshButton />
-                    <SecurityToggle />
+              <DragAndDropProvider>
+                <div className="flex flex-col gap-4 w-full">
+                  <div className="flex items-center justify-center lg:justify-start gap-2">
+                    <h1 className="text-2xl lg:text-3xl font-bold">
+                      Storage Dashboard
+                    </h1>
+                    <HeaderBadge />
                   </div>
+
+                  <div className="flex flex-col lg:flex-row items-center justify-between gap-4 flex-wrap">
+                    <DirectoryBreadcrumbs />
+                    <div className="flex flex-row gap-2 shrink-0">
+                      <RefreshButton />
+                      <SecurityToggle />
+                    </div>
+                  </div>
+                  <div className="flex flex-col lg:flex-row gap-2 w-full justify-center lg:justify-end">
+                    <DeleteSelectedButton />
+                    <NewFolderButton />
+                    <UploadFilesButton />
+                  </div>
+                  <UserFiles />
                 </div>
-                <div className="flex flex-col lg:flex-row gap-2 w-full justify-center lg:justify-end">
-                  <DeleteSelectedButton />
-                  <NewFolderButton />
-                  <UploadFilesButton />
-                </div>
-                <UserFiles />
-              </div>
+              </DragAndDropProvider>
             </SelectedRowsProvider>
           </UserDataProvider>
         </DirectoryProvider>

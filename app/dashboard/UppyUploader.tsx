@@ -1,6 +1,13 @@
 "use client";
 
-import Uppy, { BasePlugin, Meta, Body, PluginOpts, UppyFile } from "@uppy/core";
+import Uppy, {
+  BasePlugin,
+  Meta,
+  Body,
+  PluginOpts,
+  UppyFile,
+  UploadResult,
+} from "@uppy/core";
 import Dashboard from "@uppy/react/lib/Dashboard";
 import AwsS3, { type AwsBody } from "@uppy/aws-s3";
 import { RefObject, useEffect, useRef, useState } from "react";
@@ -20,7 +27,6 @@ import { getSignedUploadUrlAction } from "@/actions/get-signed-upload-url";
 import { insertUploadedFileAction } from "@/actions/insert-uploaded-file";
 import {
   encryptBlobWithMetaAESGCM,
-  generateTextHash,
   signMessageWithRSA,
 } from "@/utils/crypto/crypto";
 import { usePrivateKey } from "@/components/private-key-context";
@@ -38,7 +44,10 @@ type RequiredMetaFields = {
   nameHash: string;
 };
 
-async function encrypt(uppyFile: UppyFile<RequiredMetaFields, Body>, publicKey: string) {
+async function encrypt(
+  uppyFile: UppyFile<RequiredMetaFields, Body>,
+  publicKey: string
+) {
   const data = await encryptBlobWithMetaAESGCM(
     uppyFile.data,
     uppyFile.name ?? "noname",
@@ -49,11 +58,10 @@ async function encrypt(uppyFile: UppyFile<RequiredMetaFields, Body>, publicKey: 
   return data;
 }
 
-class Encryption<M extends RequiredMetaFields, B extends Body> extends BasePlugin<
-  PluginOpts,
-  M,
-  B
-> {
+class Encryption<
+  M extends RequiredMetaFields,
+  B extends Body
+> extends BasePlugin<PluginOpts, M, B> {
   constructor(uppy: Uppy<M, B>, options: PluginOpts) {
     super(uppy, options);
     this.id = options.id || "encryption";
@@ -70,24 +78,26 @@ class Encryption<M extends RequiredMetaFields, B extends Body> extends BasePlugi
 
     const promises = fileIDs.map(async (fileID) => {
       const uppyFile = this.uppy.getFile(fileID);
-      return await encrypt(uppyFile, userKeyResult.data?.publicKey!).then((encrypted) => {
-        const files = this.uppy.getState().files;
-        this.uppy.setState({
-          files: Object.assign({}, files, {
-            [fileID]: Object.assign({}, files[fileID], {
-              data: encrypted.encryptedBlob,
+      return await encrypt(uppyFile, userKeyResult.data?.publicKey!).then(
+        (encrypted) => {
+          const files = this.uppy.getState().files;
+          this.uppy.setState({
+            files: Object.assign({}, files, {
+              [fileID]: Object.assign({}, files[fileID], {
+                data: encrypted.encryptedBlob,
+              }),
             }),
-          }),
-        });
-        this.uppy.setFileMeta(fileID, {
-          encryptedAesKey: encrypted.encryptedAesKey,
-          iv: encrypted.iv,
-          encryptedFileName: encrypted.encryptedFileName,
-          encryptedFileType: encrypted.encryptedFileType,
-          encryptedFileSize: encrypted.encryptedFileSize,
-          nameHash: encrypted.nameHash,
-        } as M);
-      });
+          });
+          this.uppy.setFileMeta(fileID, {
+            encryptedAesKey: encrypted.encryptedAesKey,
+            iv: encrypted.iv,
+            encryptedFileName: encrypted.encryptedFileName,
+            encryptedFileType: encrypted.encryptedFileType,
+            encryptedFileSize: encrypted.encryptedFileSize,
+            nameHash: encrypted.nameHash,
+          } as M);
+        }
+      );
     });
     return Promise.all(promises);
   }
@@ -156,7 +166,10 @@ function createUppy(
 
         const uppyFile = uppy.getFile(file.id);
         const splitted = uppyFile.name?.split(".");
-        const extension = splitted && splitted.length > 1 ? splitted[splitted.length - 1] : null;
+        const extension =
+          splitted && splitted.length > 1
+            ? splitted[splitted.length - 1]
+            : null;
 
         const result = await createMultipartUploadAction({
           fileExtension: extension,
@@ -250,7 +263,10 @@ function createUppy(
 
         const uppyFile = uppy.getFile(fileObject.id);
         const splitted = uppyFile.name?.split(".");
-        const extension = splitted && splitted.length > 1 ? splitted[splitted.length - 1] : null;
+        const extension =
+          splitted && splitted.length > 1
+            ? splitted[splitted.length - 1]
+            : null;
 
         const result = await getSignedUploadUrlAction({
           fileExtension: extension,
@@ -298,12 +314,10 @@ export function UppyUploader() {
 
   useEffect(() => {
     if (!uppy) return;
-    
-    uppy.on("files-added", (files) => {
-      console.log("files-added", files);
-    });
 
-    uppy.on("complete", async (result) => {
+    async function handleFileUploadComplete(
+      result: UploadResult<RequiredMetaFields, AwsBody>
+    ) {
       const { successful = [], failed } = result;
 
       if (successful.length === 0) return;
@@ -340,8 +354,14 @@ export function UppyUploader() {
 
       refetchData();
       toast.success(`${validUploads.length} files uploaded successfully!`);
-    });
-  }, [refetchData]);
+    }
+
+    uppy.on("complete", handleFileUploadComplete);
+
+    return () => {
+      uppy.off("complete", handleFileUploadComplete);
+    };
+  }, [uppy, refetchData]);
 
   if (!uppy || !localPrivateKey) return null;
 

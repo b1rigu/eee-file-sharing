@@ -7,7 +7,6 @@ import { deleteUploadedDataAction } from "@/actions/delete-uploaded-data";
 import { signMessageWithRSA } from "@/utils/crypto/crypto";
 import { uint8ArrayToBase64 } from "@/utils/utils";
 import { toast } from "sonner";
-import { useDirectory } from "./directory-provider";
 import { usePrivateKey } from "./private-key-context";
 
 type SelectedRowsContextType = {

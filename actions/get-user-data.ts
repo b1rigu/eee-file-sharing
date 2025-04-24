@@ -22,8 +22,16 @@ export const getUserDataAction = authActionClient
       return await db
         .select()
         .from(dataNodes)
-        .where(and(eq(dataNodes.userId, ctx.session.user.id), isNull(dataNodes.parentId)))
-        .orderBy(desc(dataNodes.createdAt));
+        .where(
+          and(
+            eq(dataNodes.userId, ctx.session.user.id),
+            isNull(dataNodes.parentId)
+          )
+        )
+        .orderBy(
+          sql`CASE WHEN ${dataNodes.type} = 'folder' THEN 0 WHEN ${dataNodes.type} = 'file' THEN 1 ELSE 2 END`,
+          desc(dataNodes.createdAt)
+        );
     }
 
     const parentExists = await db
@@ -39,7 +47,10 @@ export const getUserDataAction = authActionClient
       .select()
       .from(dataNodes)
       .where(
-        and(eq(dataNodes.userId, ctx.session.user.id), eq(dataNodes.parentId, parsedInput.parentId))
+        and(
+          eq(dataNodes.userId, ctx.session.user.id),
+          eq(dataNodes.parentId, parsedInput.parentId)
+        )
       )
       .orderBy(
         sql`CASE WHEN ${dataNodes.type} = 'folder' THEN 0 WHEN ${dataNodes.type} = 'file' THEN 1 ELSE 2 END`,

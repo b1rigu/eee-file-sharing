@@ -32,7 +32,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider attribute="class" disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
           <div className="min-h-screen">
             <header className="w-full h-16 border-b border-2 px-4">
               <div className="h-full container mx-auto flex items-center justify-between">
