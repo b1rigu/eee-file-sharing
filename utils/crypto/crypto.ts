@@ -27,6 +27,7 @@ import {
   generateAESGCMKey,
   importAESKeyForDecrypt,
 } from "./aes-utils";
+import Uppy, { UppyFile } from "@uppy/core";
 
 function generateIV() {
   return crypto.getRandomValues(new Uint8Array(IV_LENGTH)); // 96-bit IV
@@ -74,16 +75,21 @@ export async function encryptTextWithPublicKey(
 }
 
 export async function encryptBlobWithMetaAESGCM(
-  blob: Blob,
-  fileName: string,
-  fileType: string,
-  fileSize: number,
-  RSAPublicKey: string
+  uppyFile: UppyFile<any, any>,
+  RSAPublicKey: string,
+  uppy: Uppy<any, any>
 ) {
+  const blob = uppyFile.data;
+  const fileName = uppyFile.name ?? "noname";
+  const fileType = uppyFile.type;
+  const fileSize = uppyFile.size ?? 0;
+
   const aesKey = await generateAESGCMKey();
   const encryptedChunks: Uint8Array[] = [];
   const fileBuffer = await blob.arrayBuffer();
   const fileBytes = new Uint8Array(fileBuffer);
+
+  let lastProgressStep = 0;
 
   for (
     let offset = 0;
@@ -102,8 +108,27 @@ export async function encryptBlobWithMetaAESGCM(
     result.set(iv, 0);
     result.set(encryptedBytes, iv.length);
 
+    const progress = offset / fileSize;
+    const roundedStep = Math.floor(progress * 20) / 20;
+
+    if (roundedStep > lastProgressStep) {
+      lastProgressStep = roundedStep;
+
+      uppy.emit("preprocess-progress", uppyFile, {
+        mode: "determinate",
+        message: `Encrypting ${uppyFile.name}...`,
+        value: roundedStep,
+      });
+    }
+
     encryptedChunks.push(result);
   }
+
+  uppy.emit("preprocess-progress", uppyFile, {
+    mode: "determinate",
+    message: `Encrypting ${uppyFile.name}...`,
+    value: 1,
+  });
 
   const encryptedBlob = new Blob(encryptedChunks);
 

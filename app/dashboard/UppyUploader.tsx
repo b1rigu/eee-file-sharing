@@ -42,25 +42,8 @@ type RequiredMetaFields = {
   nameHash: string;
 };
 
-async function encrypt(
-  uppyFile: UppyFile<RequiredMetaFields, Body>,
-  publicKey: string
-) {
-  const data = await encryptBlobWithMetaAESGCM(
-    uppyFile.data,
-    uppyFile.name ?? "noname",
-    uppyFile.type,
-    uppyFile.size ?? 0,
-    publicKey
-  );
-  return data;
-}
-
-class Encryption<
-  M extends RequiredMetaFields,
-  B extends Body
-> extends BasePlugin<PluginOpts, M, B> {
-  constructor(uppy: Uppy<M, B>, options: PluginOpts) {
+class Encryption extends BasePlugin<PluginOpts, RequiredMetaFields, AwsBody> {
+  constructor(uppy: Uppy<RequiredMetaFields, AwsBody>, options: PluginOpts) {
     super(uppy, options);
     this.id = options.id || "encryption";
     this.type = "modifier"; // value doesn't really matter, we may make this optional later
@@ -76,26 +59,25 @@ class Encryption<
 
     const promises = fileIDs.map(async (fileID) => {
       const uppyFile = this.uppy.getFile(fileID);
-      return await encrypt(uppyFile, userKeyResult.data?.publicKey!).then(
-        (encrypted) => {
-          const files = this.uppy.getState().files;
-          this.uppy.setState({
-            files: Object.assign({}, files, {
-              [fileID]: Object.assign({}, files[fileID], {
-                data: encrypted.encryptedBlob,
-              }),
-            }),
-          });
-          this.uppy.setFileMeta(fileID, {
-            encryptedAesKey: encrypted.encryptedAesKey,
-            iv: encrypted.iv,
-            encryptedFileName: encrypted.encryptedFileName,
-            encryptedFileType: encrypted.encryptedFileType,
-            encryptedFileSize: encrypted.encryptedFileSize,
-            nameHash: encrypted.nameHash,
-          } as M);
-        }
-      );
+      return await encryptBlobWithMetaAESGCM(
+        uppyFile,
+        userKeyResult.data?.publicKey!,
+        this.uppy
+      ).then((encrypted) => {
+        this.uppy.emit("preprocess-complete", uppyFile);
+        this.uppy.setFileState(fileID, {
+          data: encrypted.encryptedBlob,
+          size: encrypted.encryptedBlob.size,
+        });
+        this.uppy.setFileMeta(fileID, {
+          encryptedAesKey: encrypted.encryptedAesKey,
+          iv: encrypted.iv,
+          encryptedFileName: encrypted.encryptedFileName,
+          encryptedFileType: encrypted.encryptedFileType,
+          encryptedFileSize: encrypted.encryptedFileSize,
+          nameHash: encrypted.nameHash,
+        } as RequiredMetaFields);
+      });
     });
     return Promise.all(promises);
   }
@@ -370,7 +352,6 @@ export function UppyUploader() {
   return (
     <Dashboard
       className="w-full"
-      fileManagerSelectionType="both" // TODO: implement folder upload
       showProgressDetails={true}
       theme={theme === "dark" ? "dark" : "light"}
       singleFileFullScreen={false}
