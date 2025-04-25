@@ -21,6 +21,7 @@ import { BackFolderButton } from "./BackFolderButton";
 import { useDragAndDrop } from "@/components/drag-and-drop-provider";
 import { DragOverlay } from "@dnd-kit/core";
 import { restrictToWindowEdges, snapCenterToCursor } from "@dnd-kit/modifiers";
+import { getFileIcon } from "@/utils/utils";
 
 export function UserFiles() {
   const { localPrivateKey } = usePrivateKey();
@@ -51,7 +52,7 @@ export function UserFiles() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40px]">
+                <TableHead className="w-[30px] min-w-[30px]">
                   <Checkbox
                     disabled={userAvailableData.length === 0}
                     checked={
@@ -107,7 +108,8 @@ export function UserFiles() {
       )}
       <DragOverlay modifiers={[snapCenterToCursor, restrictToWindowEdges]}>
         {activeItem ? (
-          <div className="border drop-shadow-md px-8 py-2 text-nowrap bg-background rounded-2xl w-min cursor-grabbing">
+          <div className="border drop-shadow-md px-8 py-2 text-nowrap bg-background rounded-2xl w-min cursor-grabbing flex items-center gap-2">
+            {getFileIcon(activeItem.encryptedType!, 4)}
             <p>{activeItem.encryptedName}</p>
           </div>
         ) : null}

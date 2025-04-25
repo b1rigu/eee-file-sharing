@@ -117,6 +117,7 @@ function createUppy(
     restrictions: {
       maxNumberOfFiles: 50,
     },
+    autoProceed: true,
   });
 
   uppy.use(Encryption, {});
@@ -372,6 +373,7 @@ export function UppyUploader() {
       fileManagerSelectionType="both" // TODO: implement folder upload
       showProgressDetails={true}
       theme={theme === "dark" ? "dark" : "light"}
+      singleFileFullScreen={false}
       uppy={uppy}
     />
   );

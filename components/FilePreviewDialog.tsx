@@ -1,7 +1,7 @@
 "use client";
 
 import { FileText, X, Image as ImageIcon, File, Download } from "lucide-react";
-import { JSX, useRef, useState } from "react";
+import { JSX, useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Transition } from "@headlessui/react";
 import ClientOnlyPortal from "./ClientOnlyPortal";
@@ -16,6 +16,7 @@ import { getSignedDownloadUrlAction } from "@/actions/get-signed-download-url";
 import {
   arrayBufferToBase64,
   base64ToUint8Array,
+  getFileIcon,
   uint8ArrayToBase64,
 } from "@/utils/utils";
 import { decryptBufferWithRSAPrivateKey } from "@/utils/crypto/rsa-utils";
@@ -31,22 +32,26 @@ type UploadedFile = {
 
 export function FilePreviewDialog({
   uploadedFile,
-  children,
+  isOpen,
+  handleClose,
 }: Readonly<{
   uploadedFile: UploadedFile;
-  children: React.ReactNode;
+  isOpen: boolean;
+  handleClose: () => void;
 }>) {
-  const [isOpen, setIsOpen] = useState(false);
   const [gottenPreview, setGottenPreview] = useState(false);
   const [previewComp, setPreviewComp] = useState<JSX.Element | null>(null);
   const { localPrivateKey } = usePrivateKey();
   const urlRef = useRef<string | null>(null);
 
-  async function handleOpen() {
-    setIsOpen(true);
+  useEffect(() => {
+    if (isOpen) handleOnOpen();
+  }, [isOpen]);
+
+  async function handleOnOpen() {
     if (gottenPreview) return;
-    const filePreview = await getFilePreview(uploadedFile);
     setGottenPreview(true);
+    const filePreview = await getFilePreview(uploadedFile);
     if (filePreview) {
       setPreviewComp(filePreview);
     }
@@ -76,17 +81,6 @@ export function FilePreviewDialog({
       console.error(error);
     }
   }
-
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes("pdf")) {
-      return <FileText className="h-5 w-5 text-red-500 shrink-0" />;
-    } else if (fileType.includes("word") || fileType.includes("document")) {
-      return <FileText className="h-5 w-5 text-blue-500 shrink-0" />;
-    } else if (fileType.includes("image")) {
-      return <ImageIcon className="h-5 w-5 text-green-500 shrink-0" />;
-    }
-    return <File className="h-5 w-5" />;
-  };
 
   async function getDownloadUrlData() {
     if (!localPrivateKey) {
@@ -167,58 +161,55 @@ export function FilePreviewDialog({
         className="flex flex-col items-center justify-center p-8 bg-background rounded-md"
         onClick={(e) => e.stopPropagation()}
       >
-        {getFileIcon(fileObj.fileType)}
+        {getFileIcon(fileObj.fileType, 5)}
         <p className="mt-2 text-xl md:text-2xl text-muted-foreground">
-          Can't preview file
+          Preview not available
         </p>
       </div>
     );
   }
 
   return (
-    <>
-      <div onClick={handleOpen}>{children}</div>
-      <ClientOnlyPortal selector="#preview-portal">
-        <Transition show={isOpen}>
+    <ClientOnlyPortal selector="#preview-portal">
+      <Transition show={isOpen}>
+        <div
+          className="fixed h-screen w-full top-0 left-0 z-[99] bg-black/80 backdrop-blur transition duration-150 ease-in data-[closed]:opacity-0 flex flex-col requires-no-scroll"
+          onClick={handleClose}
+        >
           <div
-            className="fixed h-screen w-full top-0 left-0 z-[99] bg-black/80 backdrop-blur transition duration-150 ease-in data-[closed]:opacity-0 flex flex-col requires-no-scroll"
-            onClick={() => setIsOpen(false)}
+            className="p-4 flex items-center gap-2 justify-between bg-card"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="p-4 flex items-center gap-2 justify-between bg-card"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-2">
-                <Button
-                  className="[&_svg]:size-6 text-muted-foreground"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <X />
-                  <span className="sr-only">Close</span>
-                </Button>
-                {getFileIcon(uploadedFile.fileType)}
-                <h2 className="font-semibold text-muted-foreground break-words break-all">
-                  {uploadedFile.fileName}
-                </h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => downloadFile(uploadedFile)}
-                >
-                  <Download />
-                  <span>Download</span>
-                </Button>
-              </div>
+            <div className="flex items-center gap-2">
+              <Button
+                className="[&_svg]:size-6 text-muted-foreground"
+                variant="ghost"
+                size="icon"
+                onClick={handleClose}
+              >
+                <X />
+                <span className="sr-only">Close</span>
+              </Button>
+              {getFileIcon(uploadedFile.fileType, 5)}
+              <h2 className="font-semibold text-muted-foreground break-words break-all">
+                {uploadedFile.fileName}
+              </h2>
             </div>
-            <div className="flex-1 overflow-hidden flex items-center justify-center">
-              {previewComp}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => downloadFile(uploadedFile)}
+              >
+                <Download />
+                <span>Download</span>
+              </Button>
             </div>
           </div>
-        </Transition>
-      </ClientOnlyPortal>
-    </>
+          <div className="flex-1 overflow-hidden flex items-center justify-center">
+            {previewComp}
+          </div>
+        </div>
+      </Transition>
+    </ClientOnlyPortal>
   );
 }

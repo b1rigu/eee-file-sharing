@@ -2,6 +2,7 @@
 
 import { getSignedDownloadUrlAction } from "@/actions/get-signed-download-url";
 import { usePrivateKey } from "@/components/private-key-context";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   decryptAndSaveWithAESGCM,
   signMessageWithRSA,
@@ -60,9 +61,5 @@ export function DownloadFileButton({
     );
   }
 
-  return (
-    <div className="w-full h-full" onClick={downloadFile}>
-      Download
-    </div>
-  );
+  return <DropdownMenuItem onClick={downloadFile}>Download</DropdownMenuItem>;
 }

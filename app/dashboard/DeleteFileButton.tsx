@@ -2,6 +2,7 @@
 
 import { deleteUploadedDataAction } from "@/actions/delete-uploaded-data";
 import { usePrivateKey } from "@/components/private-key-context";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useUserData } from "@/components/user-data-context";
 import { signMessageWithRSA } from "@/utils/crypto/crypto";
 import { uint8ArrayToBase64 } from "@/utils/utils";
@@ -36,9 +37,5 @@ export function DeleteDataButton({ dataId }: { dataId: string }) {
     refetchData();
   }
 
-  return (
-    <div className="w-full h-full" onClick={deleteData}>
-      Delete
-    </div>
-  );
+  return <DropdownMenuItem onClick={deleteData}>Delete</DropdownMenuItem>;
 }

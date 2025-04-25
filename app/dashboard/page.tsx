@@ -34,7 +34,7 @@ export default async function Dashboard() {
                 <div className="flex flex-col gap-4 w-full">
                   <div className="flex items-center justify-center lg:justify-start gap-2">
                     <h1 className="text-2xl lg:text-3xl font-bold">
-                      Storage Dashboard
+                      My Files
                     </h1>
                     <HeaderBadge />
                   </div>

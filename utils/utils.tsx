@@ -1,3 +1,5 @@
+import { FileText, ImageIcon, File } from "lucide-react";
+
 export function arrayBufferToBase64(data: ArrayBuffer): string {
   return uint8ArrayToBase64(new Uint8Array(data));
 }
@@ -28,4 +30,19 @@ export const formatFileSize = (size: number) => {
     i++;
   }
   return `${size.toFixed(2)} ${units[i]}`;
+};
+
+export const getFileIcon = (fileType: string, size: number) => {
+  if (fileType.includes("pdf")) {
+    return <FileText className={`h-${size} w-${size} text-red-500 shrink-0`} />;
+  } else if (fileType.includes("word") || fileType.includes("document")) {
+    return (
+      <FileText className={`h-${size} w-${size} text-blue-500 shrink-0`} />
+    );
+  } else if (fileType.includes("image")) {
+    return (
+      <ImageIcon className={`h-${size} w-${size} text-green-500 shrink-0`} />
+    );
+  }
+  return <File className={`h-${size} w-${size} shrink-0`} />;
 };
