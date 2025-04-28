@@ -53,7 +53,7 @@ export function SharedFiles() {
             <TableBody>
               {sharedFiles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <div className="flex flex-col items-center justify-center py-10 text-center">
                       <Cloud className="h-10 w-10 text-muted-foreground mb-4" />
                       <h3 className="text-lg font-semibold">
