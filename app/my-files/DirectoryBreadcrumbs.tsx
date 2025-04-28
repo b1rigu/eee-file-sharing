@@ -41,7 +41,7 @@ export function DirectoryBreadcrumbs() {
               asChild
             >
               <Link
-                href="/dashboard"
+                href="/my-files"
                 className={`${
                   segments.length === 0
                     ? "text-muted-foreground pointer-events-none"

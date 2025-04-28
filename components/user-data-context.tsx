@@ -1,27 +1,34 @@
 "use client";
 
-import { dataNodes } from "@/lib/drizzle/schema";
-import { arrayBufferToBase64, base64ToUint8Array, uint8ArrayToBase64 } from "@/utils/utils";
+import { uint8ArrayToBase64 } from "@/utils/utils";
 import { createContext, useContext, useEffect, useState } from "react";
 import { usePrivateKey } from "./private-key-context";
 import { getUserDataAction } from "@/actions/get-user-data";
 import { toast } from "sonner";
-import { signMessageWithRSA } from "@/utils/crypto/crypto";
-import { decryptBufferWithAESGCM, importAESKeyForDecrypt } from "@/utils/crypto/aes-utils";
-import { decryptBufferWithRSAPrivateKey } from "@/utils/crypto/rsa-utils";
+import {
+  decryptTextWithPrivateKey,
+  signMessageWithRSA,
+} from "@/utils/crypto/crypto";
 import { useDirectory } from "./directory-provider";
 import { useRouter } from "next/navigation";
+import { UserData } from "@/actions/types";
 
 type UserDataContextType = {
-  userAvailableData: (typeof dataNodes.$inferSelect)[];
+  userAvailableData: UserData[];
   refetchData: () => void;
   loading: boolean;
 };
 
-const UserDataContext = createContext<UserDataContextType | undefined>(undefined);
+const UserDataContext = createContext<UserDataContextType | undefined>(
+  undefined
+);
 
-export const UserDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const [userAvailableData, setUserAvailableData] = useState<(typeof dataNodes.$inferSelect)[]>([]);
+export const UserDataProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [userAvailableData, setUserAvailableData] = useState<UserData[]>([]);
   const { localPrivateKey } = usePrivateKey();
   const [loading, setLoading] = useState(false);
   const { currentDir } = useDirectory();
@@ -48,7 +55,7 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
     setLoading(false);
     if (userDataResult?.serverError) {
       toast.error(userDataResult.serverError);
-      router.replace("/dashboard");
+      router.replace("/my-files");
       return;
     }
 
@@ -61,41 +68,40 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
         if (item.type === "file") {
           return {
             ...item,
-            encryptedName: await decryptText(item.encryptedName, item.encryptedKey, item.iv),
-            encryptedType: await decryptText(item.encryptedType!, item.encryptedKey, item.iv),
-            encryptedSize: await decryptText(item.encryptedSize!, item.encryptedKey, item.iv),
+            encryptedName: await decryptTextWithPrivateKey(
+              item.encryptedName,
+              item.encryptedKey,
+              item.iv,
+              localPrivateKey
+            ),
+            encryptedType: await decryptTextWithPrivateKey(
+              item.encryptedType!,
+              item.encryptedKey,
+              item.iv,
+              localPrivateKey
+            ),
+            encryptedSize: await decryptTextWithPrivateKey(
+              item.encryptedSize!,
+              item.encryptedKey,
+              item.iv,
+              localPrivateKey
+            ),
           };
         }
 
         return {
           ...item,
-          encryptedName: await decryptText(item.encryptedName, item.encryptedKey, item.iv),
+          encryptedName: await decryptTextWithPrivateKey(
+            item.encryptedName,
+            item.encryptedKey,
+            item.iv,
+            localPrivateKey
+          ),
         };
       })
     );
 
     setUserAvailableData(mappedUserData);
-  }
-
-  async function decryptText(encryptedText: string, encryptedFileKey: string, iv: string) {
-    if (!localPrivateKey) {
-      return "";
-    }
-
-    try {
-      const ivBytes = base64ToUint8Array(iv);
-      const encryptedBytes = base64ToUint8Array(encryptedText);
-      const decryptedAesKey = await decryptBufferWithRSAPrivateKey(
-        base64ToUint8Array(encryptedFileKey),
-        localPrivateKey
-      );
-      const aesKey = await importAESKeyForDecrypt(arrayBufferToBase64(decryptedAesKey));
-      const decryptedBuffer = await decryptBufferWithAESGCM(ivBytes, aesKey, encryptedBytes);
-      return new TextDecoder().decode(decryptedBuffer);
-    } catch (error) {
-      console.error(error);
-      return "";
-    }
   }
 
   async function refetchData() {

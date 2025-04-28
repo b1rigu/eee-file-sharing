@@ -4,7 +4,6 @@ import { db } from "@/lib/drizzle";
 import { dataNodes } from "@/lib/drizzle/schema";
 import { authActionClient } from "@/lib/safe-action";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { checkSignature } from "./utils";
 import { eq } from "drizzle-orm";
 
@@ -56,6 +55,4 @@ export const changeDataParentAction = authActionClient
       .update(dataNodes)
       .set({ parentId: parsedInput.newParentId })
       .where(eq(dataNodes.id, parsedInput.dataId));
-
-    revalidatePath("/dashboard");
   });

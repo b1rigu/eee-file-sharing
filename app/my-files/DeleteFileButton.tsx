@@ -2,13 +2,20 @@
 
 import { deleteUploadedDataAction } from "@/actions/delete-uploaded-data";
 import { usePrivateKey } from "@/components/private-key-context";
+import { ContextMenuItem } from "@/components/ui/context-menu";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useUserData } from "@/components/user-data-context";
 import { signMessageWithRSA } from "@/utils/crypto/crypto";
 import { uint8ArrayToBase64 } from "@/utils/utils";
 import { toast } from "sonner";
 
-export function DeleteDataButton({ dataId }: { dataId: string }) {
+export function DeleteDataButton({
+  dataId,
+  contextMenu = false,
+}: {
+  dataId: string;
+  contextMenu?: boolean;
+}) {
   const { localPrivateKey } = usePrivateKey();
   const { refetchData } = useUserData();
 
@@ -37,5 +44,8 @@ export function DeleteDataButton({ dataId }: { dataId: string }) {
     refetchData();
   }
 
+  if (contextMenu) {
+    return <ContextMenuItem onClick={deleteData}>Delete</ContextMenuItem>;
+  }
   return <DropdownMenuItem onClick={deleteData}>Delete</DropdownMenuItem>;
 }

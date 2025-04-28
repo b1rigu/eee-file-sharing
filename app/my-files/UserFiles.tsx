@@ -67,6 +67,7 @@ export function UserFiles() {
                 <TableHead className="w-36 min-w-36">Size</TableHead>
                 <TableHead className="w-36 min-w-36">Type</TableHead>
                 <TableHead className="w-36 min-w-36">Uploaded</TableHead>
+                <TableHead className="w-36 min-w-36">Shared</TableHead>
                 <TableHead className="text-right w-36 min-w-36">
                   Actions
                 </TableHead>
@@ -76,7 +77,7 @@ export function UserFiles() {
               <BackFolderButton />
               {userAvailableData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <div className="flex flex-col items-center justify-center py-10 text-center">
                       <Cloud className="h-10 w-10 text-muted-foreground mb-4" />
                       <h3 className="text-lg font-semibold">

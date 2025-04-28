@@ -52,6 +52,4 @@ export const insertUploadedFileAction = authActionClient
     );
 
     await db.insert(dataNodes).values(filesToInsert);
-
-    revalidatePath("/dashboard");
   });

@@ -21,9 +21,9 @@ export function BackFolderButton() {
           <TableCell>
             <Checkbox disabled checked={false} />
           </TableCell>
-          <TableCell colSpan={5} className="font-medium py-3.5">
+          <TableCell colSpan={6} className="font-medium py-3.5">
             <Link
-              href={`/dashboard?dir=${encodeURIComponent(
+              href={`/my-files?dir=${encodeURIComponent(
                 segments.slice(0, segments.length - 1).join("/") + "/"
               )}`}
               className="flex items-center hover:underline text-blue-500 gap-2"

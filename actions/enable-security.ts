@@ -27,6 +27,4 @@ export const enableSecurityAction = authActionClient
       iv: parsedInput.iv,
       createdAt: new Date(),
     });
-
-    revalidatePath("/dashboard");
   });

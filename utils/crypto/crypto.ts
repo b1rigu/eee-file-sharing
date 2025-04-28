@@ -13,6 +13,7 @@ import {
   uint8ArrayToBase64,
 } from "../utils";
 import {
+  decryptBufferWithRSAPrivateKey,
   encryptBufferWithRSAPublicKey,
   exportRSAPrivateKey,
   importRSAPrivateKeyToDecrypt,
@@ -42,6 +43,34 @@ export async function generateTextHash(text: string) {
   const data = encoder.encode(text);
   const hashBuffer = await crypto.subtle.digest(SHA_512_ALGORITHM, data);
   return arrayBufferToBase64(hashBuffer);
+}
+
+export async function decryptTextWithPrivateKey(
+  encryptedText: string,
+  encryptedFileKey: string,
+  iv: string,
+  localPrivateKey: string
+) {
+  try {
+    const ivBytes = base64ToUint8Array(iv);
+    const encryptedBytes = base64ToUint8Array(encryptedText);
+    const decryptedAesKey = await decryptBufferWithRSAPrivateKey(
+      base64ToUint8Array(encryptedFileKey),
+      localPrivateKey
+    );
+    const aesKey = await importAESKeyForDecrypt(
+      arrayBufferToBase64(decryptedAesKey)
+    );
+    const decryptedBuffer = await decryptBufferWithAESGCM(
+      ivBytes,
+      aesKey,
+      encryptedBytes
+    );
+    return new TextDecoder().decode(decryptedBuffer);
+  } catch (error) {
+    console.error(error);
+    return "";
+  }
 }
 
 export async function encryptTextWithPublicKey(

@@ -90,6 +90,4 @@ export const deleteUploadedDataAction = authActionClient
     }
 
     await db.delete(dataNodes).where(inArray(dataNodes.id, dataIds));
-
-    revalidatePath("/dashboard");
   });

@@ -2,6 +2,7 @@
 
 import { getSignedDownloadUrlAction } from "@/actions/get-signed-download-url";
 import { usePrivateKey } from "@/components/private-key-context";
+import { ContextMenuItem } from "@/components/ui/context-menu";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   decryptAndSaveWithAESGCM,
@@ -20,11 +21,13 @@ export function DownloadFileButton({
   fileName,
   fileSize,
   encryptedFileKey,
+  contextMenu = false,
 }: {
   fileId: string;
   fileName: string;
   fileSize: number;
   encryptedFileKey: string;
+  contextMenu?: boolean;
 }) {
   const { localPrivateKey } = usePrivateKey();
 
@@ -59,6 +62,10 @@ export function DownloadFileButton({
       fileName,
       fileSize
     );
+  }
+
+  if (contextMenu) {
+    return <ContextMenuItem onClick={downloadFile}>Download</ContextMenuItem>;
   }
 
   return <DropdownMenuItem onClick={downloadFile}>Download</DropdownMenuItem>;

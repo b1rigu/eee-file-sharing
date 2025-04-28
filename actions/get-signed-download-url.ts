@@ -23,13 +23,30 @@ export const getSignedDownloadUrlAction = authActionClient
 
     const uploadedData = await db.query.dataNodes.findFirst({
       where: eq(dataNodes.id, dataId),
+      with: {
+        sharedFiles: {
+          columns: {},
+          with: {
+            receiver: {
+              columns: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!uploadedData) {
       throw new Error("File not found");
     }
 
-    if (uploadedData.userId !== ctx.session.user.id) {
+    if (
+      uploadedData.userId !== ctx.session.user.id &&
+      uploadedData.sharedFiles.every(
+        (sharedFile) => sharedFile.receiver.id !== ctx.session.user.id
+      )
+    ) {
       throw new Error("You do not have permission to download this file");
     }
 

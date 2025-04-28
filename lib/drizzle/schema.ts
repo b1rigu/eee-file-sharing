@@ -1,4 +1,12 @@
-import { pgTable, text, timestamp, boolean, AnyPgColumn, unique } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  AnyPgColumn,
+  unique,
+} from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -9,6 +17,10 @@ export const user = pgTable("user", {
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
 });
+
+export const userRelations = relations(user, ({ many }) => ({
+  sharedFiles: many(sharedFiles),
+}));
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),
@@ -72,8 +84,41 @@ export const dataNodes = pgTable(
 
     createdAt: timestamp("created_at").notNull(),
   },
-  (t) => [unique().on(t.userId, t.parentId, t.type, t.nameHash).nullsNotDistinct()]
+  (t) => [
+    unique().on(t.userId, t.parentId, t.type, t.nameHash).nullsNotDistinct(),
+  ]
 );
+
+export const dataNodesRelations = relations(dataNodes, ({ many }) => ({
+  sharedFiles: many(sharedFiles),
+}));
+
+export const sharedFiles = pgTable(
+  "shared_files",
+  {
+    id: text("id").primaryKey(),
+    receiverId: text("receiver_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    dataNodeId: text("data_node_id")
+      .notNull()
+      .references(() => dataNodes.id, { onDelete: "cascade" }),
+    encryptedKey: text("encrypted_key").notNull(),
+    createdAt: timestamp("created_at").notNull(),
+  },
+  (t) => [unique().on(t.receiverId, t.dataNodeId).nullsNotDistinct()]
+);
+
+export const sharedFilesRelations = relations(sharedFiles, ({ one }) => ({
+  dataNodes: one(dataNodes, {
+    fields: [sharedFiles.dataNodeId],
+    references: [dataNodes.id],
+  }),
+  receiver: one(user, {
+    fields: [sharedFiles.receiverId],
+    references: [user.id],
+  }),
+}));
 
 export const userKeys = pgTable("user_keys", {
   id: text("id").primaryKey(),

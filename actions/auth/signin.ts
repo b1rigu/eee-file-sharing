@@ -10,7 +10,7 @@ export const signInWithGoogleAction = unauthenticatedActionClient
     const data = await auth.api.signInSocial({
       body: {
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: "/my-files",
         disableRedirect: true,
       },
     });

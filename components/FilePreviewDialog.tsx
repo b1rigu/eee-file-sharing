@@ -191,7 +191,7 @@ export function FilePreviewDialog({
                 <span className="sr-only">Close</span>
               </Button>
               {getFileIcon(uploadedFile.fileType, 5)}
-              <h2 className="font-semibold text-muted-foreground break-words break-all">
+              <h2 className="font-semibold break-words break-all">
                 {uploadedFile.fileName}
               </h2>
             </div>

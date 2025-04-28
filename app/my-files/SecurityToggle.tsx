@@ -67,6 +67,13 @@ export function SecurityToggle() {
       "Set a master password (DO NOT FORGET, CANNOT RECOVER)"
     );
     if (!password) return;
+    const confirmationPassword = prompt(
+      "Enter master password again to confirm"
+    );
+    if (password !== confirmationPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
 
     setLoading(true);
 
@@ -76,7 +83,6 @@ export function SecurityToggle() {
     const privateKey = await exportRSAPrivateKey(keyPair.privateKey);
     const privateKeyString = arrayBufferToBase64(privateKey);
 
-    setPrivateLocalKey(privateKeyString);
     const encryptedPrivateKeyData = await encryptPrivateKeyWithPassword(
       keyPair.privateKey,
       password
@@ -89,6 +95,7 @@ export function SecurityToggle() {
     });
 
     setLoading(false);
+    setPrivateLocalKey(privateKeyString);
   }
 
   return (

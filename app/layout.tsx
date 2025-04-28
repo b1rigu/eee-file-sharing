@@ -5,6 +5,9 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { HeaderAuth } from "@/components/HeaderAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import Link from "next/link";
+import { PrivateKeyProvider } from "@/components/private-key-context";
+import { HeaderLink } from "@/components/HeaderLink";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,16 +40,30 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="min-h-screen">
-            <header className="w-full h-16 border-b border-2 px-4">
-              <div className="h-full container mx-auto flex items-center justify-between">
-                <h1 className="text-2xl font-bold">EEE File Storage</h1>
+            <header className="w-full border-b border-2 p-4">
+              <div className="h-full container mx-auto flex flex-col lg:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-8">
+                  <Link
+                    href="/"
+                    className="text-xl font-semibold cursor-pointer hover:text-muted-foreground"
+                  >
+                    EEE File Storage
+                  </Link>
+                  <div className="flex items-center gap-4 pt-1">
+                    <HeaderLink href="/my-files" title="My Files" />
+                    <HeaderLink href="/shared-files" title="Shared Files" />
+                  </div>
+                </div>
+
                 <div className="flex gap-4 items-center">
                   <ThemeToggle />
                   <HeaderAuth />
                 </div>
               </div>
             </header>
-            <main className="container mx-auto p-4">{children}</main>
+            <PrivateKeyProvider>
+              <main className="container mx-auto p-4">{children}</main>
+            </PrivateKeyProvider>
           </div>
           <div id="preview-portal" className="pointer-events-auto"></div>
         </ThemeProvider>

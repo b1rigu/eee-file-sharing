@@ -55,6 +55,4 @@ export const createFolderAction = authActionClient
     };
 
     await db.insert(dataNodes).values(folderToInsert);
-
-    revalidatePath("/dashboard");
   });
