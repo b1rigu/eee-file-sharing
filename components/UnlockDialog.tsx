@@ -102,15 +102,17 @@ export function UnlockDialog({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="p-0 text-xs"
-                  onClick={handleClose}
-                  asChild
-                >
-                  <Link href={"/recovery"}>Forgot Password?</Link>
-                </Button>
+                {!isCreatingNew && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 text-xs"
+                    onClick={handleClose}
+                    asChild
+                  >
+                    <Link href={"/recovery"}>Forgot Password?</Link>
+                  </Button>
+                )}
               </div>
               <div className="relative">
                 <Input
