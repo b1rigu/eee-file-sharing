@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import Link from "next/link";
 import { PrivateKeyProvider } from "@/components/private-key-context";
 import { HeaderLink } from "@/components/HeaderLink";
+import { Shield } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,8 +21,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EEE File Storage",
-  description: "Store your files securely and privately",
+  title: "EEEVault",
+  description:
+    "Military-grade encryption for your files. Truly private, truly secure.",
 };
 
 export default function RootLayout({
@@ -43,12 +45,15 @@ export default function RootLayout({
             <header className="w-full border-b border-2 p-4">
               <div className="h-full container mx-auto flex flex-col lg:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-8">
-                  <Link
-                    href="/"
-                    className="text-xl font-semibold cursor-pointer hover:text-muted-foreground"
-                  >
-                    EEE File Storage
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-6 w-6 text-primary" />
+                    <Link
+                      href="/"
+                      className="text-xl font-semibold cursor-pointer hover:text-muted-foreground"
+                    >
+                      EEEVault
+                    </Link>
+                  </div>
                   <div className="flex items-center gap-4 pt-1">
                     <HeaderLink href="/my-files" title="My Files" />
                     <HeaderLink href="/shared-files" title="Shared Files" />
