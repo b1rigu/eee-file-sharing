@@ -60,9 +60,18 @@ class Encryption extends BasePlugin<PluginOpts, RequiredMetaFields, AwsBody> {
     const promises = fileIDs.map(async (fileID) => {
       const uppyFile = this.uppy.getFile(fileID);
       return await encryptBlobWithMetaAESGCM(
-        uppyFile,
+        uppyFile.data,
+        uppyFile.name ?? "noname",
+        uppyFile.type,
+        uppyFile.size ?? 0,
         userKeyResult.data?.publicKey!,
-        this.uppy
+        (progress) => {
+          this.uppy.emit("preprocess-progress", uppyFile, {
+            mode: "determinate",
+            message: `Encrypting ${uppyFile.name}...`,
+            value: progress,
+          });
+        }
       ).then((encrypted) => {
         this.uppy.emit("preprocess-complete", uppyFile);
         this.uppy.setFileState(fileID, {
