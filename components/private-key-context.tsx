@@ -88,6 +88,7 @@ export const PrivateKeyProvider = ({
         arrayBufferToBase64(await exportRSAPrivateKey(decryptedPrivatekey))
       );
       setIsDialogOpen(false);
+      setUserKey(null);
     } catch (error) {
       toast.error("Incorrect password");
     } finally {
