@@ -47,6 +47,11 @@ export function UnlockDialog({
     }
 
     if (isCreatingNew) {
+      if (password.length < 8) {
+        setError("Password should be longer than 8 characters");
+        return;
+      }
+
       if (!confirmPassword) {
         setError("Please confirm your password");
         return;
