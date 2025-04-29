@@ -22,7 +22,6 @@ export default async function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1">
-        {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-b from-background to-muted pt-16 md:pt-24 lg:pt-32 rounded-2xl">
           <div className="container relative z-10 mx-auto px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12">
@@ -124,7 +123,6 @@ export default async function Home() {
           <div className="absolute inset-0 bg-[url('/placeholder.svg?height=1080&width=1920')] bg-cover bg-center opacity-5" />
         </section>
 
-        {/* Features Section */}
         <section id="features" className="py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -183,7 +181,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* How It Works Section */}
         <section id="how-it-works" className="bg-muted py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -235,7 +232,6 @@ export default async function Home() {
                       key={index}
                       className="relative flex flex-col md:flex-row"
                     >
-                      {/* Mobile layout (stacked) */}
                       <div className="flex md:hidden mb-4">
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                           <span className="text-xl font-bold">{step.step}</span>
@@ -245,7 +241,6 @@ export default async function Home() {
                         </div>
                       </div>
 
-                      {/* Desktop layout (side by side) */}
                       <div className="hidden md:block absolute left-1/2 top-0 -translate-x-1/2">
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                           <span className="text-xl font-bold">{step.step}</span>
@@ -274,7 +269,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* FAQ Section */}
         <section id="faq" className="bg-muted py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
@@ -296,7 +290,7 @@ export default async function Home() {
                 {
                   question: "How secure is your encryption?",
                   answer:
-                    "We use AES-256 encryption, which is virtually unbreakable with current technology. It's the same standard used by governments and military organizations worldwide to protect classified information.",
+                    "We use AES-256 and RSA-4096 encryption, which is virtually unbreakable with current technology. It's the same standard used by governments and military organizations worldwide to protect classified information.",
                 },
                 {
                   question: "Can you access my files?",
@@ -306,7 +300,7 @@ export default async function Home() {
                 {
                   question: "What happens if I forget my password?",
                   answer:
-                    "Since we use end-to-end encryption and don't store your password or encryption keys, we cannot recover your account if you forget your password.", // However, we offer an optional recovery key that you can save securely to regain access.
+                    "Since we use end-to-end encryption and don't store your password or encryption keys, we cannot recover your account if you forget your password. However, we offer an optional recovery key that you can save securely to regain access. We show this recovery key only once so be sure to save it in a secure place.",
                 },
                 {
                   question: "How do I share files securely?",
@@ -327,7 +321,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* CTA Section */}
         <section className="py-16 md:py-24">
           <div className="container mx-auto px-4 md:px-6">
             <div className="relative overflow-hidden rounded-lg bg-primary p-8 md:p-12">

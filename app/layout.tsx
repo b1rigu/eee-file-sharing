@@ -9,6 +9,7 @@ import Link from "next/link";
 import { PrivateKeyProvider } from "@/components/private-key-context";
 import { HeaderLink } from "@/components/HeaderLink";
 import { Shield } from "lucide-react";
+import { RecoveryKeyDialog } from "@/components/RecoveryKeyDialog";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,35 +42,36 @@ export default function RootLayout({
           defaultTheme="dark"
           disableTransitionOnChange
         >
-          <div className="min-h-screen">
-            <header className="w-full border-b border-2 p-4">
-              <div className="h-full container mx-auto flex flex-col lg:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-8">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-6 w-6 text-primary" />
-                    <Link
-                      href="/"
-                      className="text-xl font-semibold cursor-pointer hover:text-muted-foreground"
-                    >
-                      EEEVault
-                    </Link>
+          <PrivateKeyProvider>
+            <div className="min-h-screen">
+              <header className="w-full border-b border-2 p-4">
+                <div className="h-full container mx-auto flex flex-col lg:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-6 w-6 text-primary" />
+                      <Link
+                        href="/"
+                        className="text-xl font-semibold cursor-pointer hover:text-muted-foreground"
+                      >
+                        EEEVault
+                      </Link>
+                    </div>
+                    <div className="flex items-center gap-4 pt-1">
+                      <HeaderLink href="/my-files" title="My Files" />
+                      <HeaderLink href="/shared-files" title="Shared Files" />
+                      <RecoveryKeyDialog />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 pt-1">
-                    <HeaderLink href="/my-files" title="My Files" />
-                    <HeaderLink href="/shared-files" title="Shared Files" />
-                  </div>
-                </div>
 
-                <div className="flex gap-4 items-center">
-                  <ThemeToggle />
-                  <HeaderAuth />
+                  <div className="flex gap-4 items-center">
+                    <ThemeToggle />
+                    <HeaderAuth />
+                  </div>
                 </div>
-              </div>
-            </header>
-            <PrivateKeyProvider>
+              </header>
               <main className="container mx-auto p-4">{children}</main>
-            </PrivateKeyProvider>
-          </div>
+            </div>
+          </PrivateKeyProvider>
           <div id="preview-portal" className="pointer-events-auto"></div>
         </ThemeProvider>
         <Toaster richColors closeButton />

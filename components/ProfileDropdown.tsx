@@ -11,6 +11,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { signOutAction } from "@/actions/auth/signout";
+import Link from "next/link";
 
 export default function ProfileDropdown({
   email,
@@ -29,7 +30,7 @@ export default function ProfileDropdown({
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger>
-        <Avatar aria-label="Миний мэдээлэл">
+        <Avatar aria-label="My profile">
           <AvatarImage src={profileImage ?? undefined} alt="avatar" />
           <AvatarFallback>{email.substring(0, 1)}</AvatarFallback>
         </Avatar>
@@ -42,8 +43,11 @@ export default function ProfileDropdown({
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem className="cursor-pointer" asChild>
+          <Link href={`/settings`}>Settings</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
-          Гарах
+          Logout
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

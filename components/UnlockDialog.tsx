@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 
 interface UnlockDialogProps {
   isOpen: boolean;
@@ -99,7 +100,18 @@ export function UnlockDialog({
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="p-0 text-xs"
+                  onClick={handleClose}
+                  asChild
+                >
+                  <Link href={"/recovery"}>Forgot Password?</Link>
+                </Button>
+              </div>
               <div className="relative">
                 <Input
                   id="password"

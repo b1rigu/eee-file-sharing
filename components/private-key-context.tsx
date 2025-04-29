@@ -6,22 +6,35 @@ import { userKeys } from "@/lib/drizzle/schema";
 import {
   decryptPrivateKeyWithPassword,
   encryptPrivateKeyWithPassword,
+  generateDashedUppercaseRecoveryKey,
+  signMessageWithRSA,
 } from "@/utils/crypto/crypto";
 import {
   exportRSAPrivateKey,
   exportRSAPublicKey,
   generateRSAKeyPair,
+  importRSAPrivateKeyToDecrypt,
 } from "@/utils/crypto/rsa-utils";
-import { arrayBufferToBase64 } from "@/utils/utils";
+import { arrayBufferToBase64, uint8ArrayToBase64 } from "@/utils/utils";
 import { createContext, useContext, useState } from "react";
 import { toast } from "sonner";
 import { UnlockDialog } from "./UnlockDialog";
+import { changePasswordAction } from "@/actions/change-password";
+import { rotateRecoverKeyAction } from "@/actions/rotate-recovery-key";
 
 type PrivateKeyContextType = {
   localPrivateKey: string | null;
   lock: () => void;
   handleEnable: () => void;
+  handleResetPassword: (newPassword: string) => Promise<void>;
+  handleRotateRecoveryKey: () => Promise<void>;
+  handleRecovery: (
+    recoveryKey: string,
+    newPassword: string
+  ) => Promise<boolean>;
   loading: boolean;
+  recoveryKey: string | null;
+  clearRecoveryKey: () => void;
 };
 
 const PrivateKeyContext = createContext<PrivateKeyContextType | undefined>(
@@ -42,10 +55,126 @@ export const PrivateKeyProvider = ({
   const [userKey, setUserKey] = useState<typeof userKeys.$inferSelect | null>(
     null
   );
+  const [recoveryKey, setRecoveryKey] = useState<string | null>(null);
 
   function lock() {
     setPrivateLocalKeyState(null);
     setUserKey(null);
+  }
+
+  function clearRecoveryKey() {
+    setRecoveryKey(null);
+  }
+
+  async function handleRecovery(recoveryKey: string, newPassword: string) {
+    const userKeyResult = await getUserKeyAction();
+    if (userKeyResult?.serverError) {
+      toast.error(userKeyResult.serverError);
+      return false;
+    }
+
+    try {
+      const userKeyData = userKeyResult?.data!;
+
+      const decryptedPrivatekey = await decryptPrivateKeyWithPassword(
+        userKeyData.encryptedPrivateKeyRecovery,
+        recoveryKey,
+        userKeyData.recoverySalt,
+        userKeyData.recoveryIv
+      );
+
+      const privateKeyString = arrayBufferToBase64(
+        await exportRSAPrivateKey(decryptedPrivatekey)
+      );
+
+      const signature = await signMessageWithRSA(privateKeyString);
+
+      const encryptedNewPrivateKeyData = await encryptPrivateKeyWithPassword(
+        decryptedPrivatekey,
+        newPassword
+      );
+
+      const result = await changePasswordAction({
+        signature: uint8ArrayToBase64(new Uint8Array(signature)),
+        encryptedPrivateKey: encryptedNewPrivateKeyData.encryptedPrivateKey,
+        salt: encryptedNewPrivateKeyData.salt,
+        iv: encryptedNewPrivateKeyData.iv,
+      });
+
+      if (result?.serverError) {
+        toast.error(result.serverError);
+        throw new Error(result.serverError);
+      }
+
+      toast.success("Succesfully reset password");
+      lock();
+      return true;
+    } catch (error) {
+      toast.error("Error resetting password");
+      return false;
+    }
+  }
+
+  async function handleResetPassword(newPassword: string) {
+    if (!confirm("Are you sure you want to reset your password?")) return;
+
+    if (!localPrivateKey) return;
+    const importedPrivateKey = await importRSAPrivateKeyToDecrypt(
+      localPrivateKey
+    );
+    const encryptedNewPrivateKeyData = await encryptPrivateKeyWithPassword(
+      importedPrivateKey,
+      newPassword
+    );
+    const signature = await signMessageWithRSA(localPrivateKey);
+
+    const result = await changePasswordAction({
+      signature: uint8ArrayToBase64(new Uint8Array(signature)),
+      encryptedPrivateKey: encryptedNewPrivateKeyData.encryptedPrivateKey,
+      salt: encryptedNewPrivateKeyData.salt,
+      iv: encryptedNewPrivateKeyData.iv,
+    });
+
+    if (result?.serverError) {
+      toast.error(result.serverError);
+      return;
+    }
+
+    toast.success("Succesfully changed password");
+    lock();
+  }
+
+  async function handleRotateRecoveryKey() {
+    if (!confirm("Are you sure you want to rotate your recovery key?")) return;
+
+    if (!localPrivateKey) return;
+    const importedPrivateKey = await importRSAPrivateKeyToDecrypt(
+      localPrivateKey
+    );
+
+    const signature = await signMessageWithRSA(localPrivateKey);
+
+    const recoveryKey = generateDashedUppercaseRecoveryKey();
+    const encryptedWithRecoveryKey = await encryptPrivateKeyWithPassword(
+      importedPrivateKey,
+      recoveryKey
+    );
+
+    const result = await rotateRecoverKeyAction({
+      signature: uint8ArrayToBase64(new Uint8Array(signature)),
+      encryptedPrivateKey: encryptedWithRecoveryKey.encryptedPrivateKey,
+      salt: encryptedWithRecoveryKey.salt,
+      iv: encryptedWithRecoveryKey.iv,
+    });
+
+    if (result?.serverError) {
+      toast.error(result.serverError);
+      return;
+    }
+
+    toast.success("Succesfully rotated recovery key");
+    setRecoveryKey(recoveryKey);
+    lock();
   }
 
   async function handleSubmit(password: string) {
@@ -109,11 +238,20 @@ export const PrivateKeyProvider = ({
       keyPair.privateKey,
       password
     );
+    const recoveryKey = generateDashedUppercaseRecoveryKey();
+    const encryptedWithRecoveryKey = await encryptPrivateKeyWithPassword(
+      keyPair.privateKey,
+      recoveryKey
+    );
+
     const result = await enableSecurityAction({
       publicKey: publicKeyString,
       encryptedPrivateKey: encryptedPrivateKeyData.encryptedPrivateKey,
       salt: encryptedPrivateKeyData.salt,
       iv: encryptedPrivateKeyData.iv,
+      encryptedPrivateKeyRecovery: encryptedWithRecoveryKey.encryptedPrivateKey,
+      recoverySalt: encryptedWithRecoveryKey.salt,
+      recoveryIv: encryptedWithRecoveryKey.iv,
     });
 
     if (result?.serverError) {
@@ -122,6 +260,7 @@ export const PrivateKeyProvider = ({
       return;
     }
 
+    setRecoveryKey(recoveryKey);
     setLoading(false);
     setPrivateLocalKeyState(privateKeyString);
     setIsDialogOpen(false);
@@ -130,7 +269,17 @@ export const PrivateKeyProvider = ({
   return (
     <>
       <PrivateKeyContext.Provider
-        value={{ localPrivateKey, lock, handleEnable, loading }}
+        value={{
+          localPrivateKey,
+          lock,
+          handleEnable,
+          loading,
+          recoveryKey,
+          clearRecoveryKey,
+          handleResetPassword,
+          handleRotateRecoveryKey,
+          handleRecovery,
+        }}
       >
         {children}
       </PrivateKeyContext.Provider>

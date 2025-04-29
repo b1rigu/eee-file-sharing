@@ -37,6 +37,24 @@ function generateSalt() {
   return crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
 }
 
+export function generateDashedUppercaseRecoveryKey(
+  groups = 7,
+  groupLength = 6
+): string {
+  const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; // Crockford Base32 (avoids ambiguous chars like O/0)
+  const bytes = new Uint8Array(groups * groupLength);
+  crypto.getRandomValues(bytes);
+
+  const chars = Array.from(bytes, (b) => charset[b % charset.length]);
+  const key = [];
+
+  for (let i = 0; i < groups; i++) {
+    key.push(chars.slice(i * groupLength, (i + 1) * groupLength).join(""));
+  }
+
+  return key.join("-"); // Example: 'A1B2C3-D4E5F6-G7H8I9-J0K1L2'
+}
+
 export async function generateTextHash(text: string) {
   const encoder = new TextEncoder();
   const data = encoder.encode(text);

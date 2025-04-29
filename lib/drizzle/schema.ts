@@ -136,5 +136,8 @@ export const userKeys = pgTable("user_keys", {
   encryptedPrivateKey: text("encrypted_private_key").notNull(),
   salt: text("salt").notNull(),
   iv: text("iv").notNull(),
+  encryptedPrivateKeyRecovery: text("encrypted_private_key_recovery").notNull(),
+  recoverySalt: text("recovery_salt").notNull(),
+  recoveryIv: text("recovery_iv").notNull(),
   createdAt: timestamp("created_at").notNull(),
 });
