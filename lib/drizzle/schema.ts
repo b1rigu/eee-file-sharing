@@ -85,7 +85,9 @@ export const dataNodes = pgTable(
     createdAt: timestamp("created_at").notNull(),
   },
   (t) => [
-    unique().on(t.userId, t.parentId, t.type, t.nameHash).nullsNotDistinct(),
+    unique("data_nodes_unique")
+      .on(t.userId, t.parentId, t.type, t.nameHash)
+      .nullsNotDistinct(),
   ]
 );
 
@@ -106,7 +108,11 @@ export const sharedFiles = pgTable(
     encryptedKey: text("encrypted_key").notNull(),
     createdAt: timestamp("created_at").notNull(),
   },
-  (t) => [unique().on(t.receiverId, t.dataNodeId).nullsNotDistinct()]
+  (t) => [
+    unique("shared_files_unique")
+      .on(t.receiverId, t.dataNodeId)
+      .nullsNotDistinct(),
+  ]
 );
 
 export const sharedFilesRelations = relations(sharedFiles, ({ one }) => ({
