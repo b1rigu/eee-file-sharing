@@ -1,15 +1,9 @@
 "use client";
 
-import Uppy, {
-  BasePlugin,
-  Body,
-  PluginOpts,
-  UppyFile,
-  UploadResult,
-} from "@uppy/core";
+import Uppy, { BasePlugin, PluginOpts } from "@uppy/core";
 import Dashboard from "@uppy/react/lib/Dashboard";
 import AwsS3, { type AwsBody } from "@uppy/aws-s3";
-import { RefObject, useEffect, useRef, useState } from "react";
+import { RefObject } from "react";
 
 import "@uppy/core/dist/style.min.css";
 import "@uppy/dashboard/dist/style.min.css";
@@ -22,17 +16,13 @@ import { listUploadPartsAction } from "@/actions/list-upload-parts";
 import { abortMultipartUploadAction } from "@/actions/abort-multipart-upload";
 import { completeMultipartUploadAction } from "@/actions/complete-multipart-upload";
 import { getSignedUploadUrlAction } from "@/actions/get-signed-upload-url";
-import { insertUploadedFileAction } from "@/actions/insert-uploaded-file";
 import {
   encryptBlobWithMetaAESGCM,
   signMessageWithRSA,
 } from "@/utils/crypto/crypto";
-import { usePrivateKey } from "@/components/private-key-context";
-import { useUserData } from "@/components/user-data-context";
 import { useTheme } from "next-themes";
-import { useDirectory } from "@/components/directory-provider";
 
-type RequiredMetaFields = {
+export type RequiredMetaFields = {
   encryptedAesKey: string;
   iv: string;
   fileKey: string;
@@ -100,7 +90,7 @@ class Encryption extends BasePlugin<PluginOpts, RequiredMetaFields, AwsBody> {
   }
 }
 
-function createUppy(
+export function createUppy(
   localPrivateKey: RefObject<string | null>,
   currentDirRef: RefObject<string | null>
 ) {
@@ -278,85 +268,12 @@ function createUppy(
   // .use(GoldenRetriever, { serviceWorker: true });
 }
 
-export function UppyUploader() {
-  const localPrivateKeyRef = useRef<string | null>(null);
-  const currentDirRef = useRef<string | null>(null);
-  const [uppy] = useState<Uppy<RequiredMetaFields, AwsBody> | null>(
-    createUppy(localPrivateKeyRef, currentDirRef)
-  );
-  const { localPrivateKey } = usePrivateKey();
-  const { refetchData } = useUserData();
+export function UppyUploader({
+  uppy,
+}: {
+  uppy: Uppy<RequiredMetaFields, AwsBody>;
+}) {
   const { theme } = useTheme();
-  const { currentDir } = useDirectory();
-
-  useEffect(() => {
-    currentDirRef.current = currentDir;
-  }, [currentDir]);
-
-  useEffect(() => {
-    localPrivateKeyRef.current = localPrivateKey;
-  }, [localPrivateKey]);
-
-  useEffect(() => {
-    if (!uppy) return;
-
-    console.log("hello");
-
-    function handleFileUploadComplete(
-      result: UploadResult<RequiredMetaFields, AwsBody>
-    ) {
-      const { successful = [], failed } = result;
-
-      if (successful.length === 0) return;
-
-      refetchData();
-      toast.success(`${successful.length} files uploaded successfully!`);
-    }
-
-    async function handleFileUploadSuccess(
-      uppyFile: UppyFile<RequiredMetaFields, AwsBody> | undefined
-    ) {
-      if (!uppyFile) return;
-
-      const validUpload = {
-        fileKey: uppyFile.meta.fileKey,
-        encryptedFileName: uppyFile.meta.encryptedFileName,
-        encryptedFileType: uppyFile.meta.encryptedFileType,
-        encryptedFileSize: uppyFile.meta.encryptedFileSize,
-        encryptedFileKey: uppyFile.meta.encryptedAesKey,
-        iv: uppyFile.meta.iv,
-        nameHash: uppyFile.meta.nameHash,
-      };
-
-      if (!localPrivateKeyRef.current) {
-        toast.error("You need to unlock first");
-        throw new Error("You need to unlock first");
-      }
-
-      const signature = await signMessageWithRSA(localPrivateKeyRef.current);
-
-      const insertResult = await insertUploadedFileAction({
-        parentId: currentDirRef.current,
-        signature: arrayBufferToBase64(signature),
-        validUploads: [validUpload],
-      });
-
-      if (insertResult?.serverError) {
-        toast.error(insertResult.serverError);
-        throw new Error(insertResult.serverError);
-      }
-    }
-
-    uppy.on("complete", handleFileUploadComplete);
-    uppy.on("upload-success", handleFileUploadSuccess);
-
-    return () => {
-      uppy.off("complete", handleFileUploadComplete);
-      uppy.off("upload-success", handleFileUploadSuccess);
-    };
-  }, [uppy, refetchData]);
-
-  if (!uppy || !localPrivateKey) return null;
 
   return (
     <Dashboard

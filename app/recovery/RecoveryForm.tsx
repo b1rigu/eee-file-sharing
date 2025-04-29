@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { usePrivateKey } from "@/components/private-key-context";
+import { useRouter } from "next/navigation";
 
 export function RecoveryForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,6 +27,7 @@ export function RecoveryForm() {
     password: "",
     confirmPassword: "",
   });
+  const router = useRouter();
 
   function resetForm() {
     setRecoveryKey("");
@@ -83,6 +85,7 @@ export function RecoveryForm() {
     setIsSubmitting(false);
     if (success) {
       resetForm();
+      router.replace("/my-files");
     }
   }
 
