@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { UpdatePassword } from "./UpdatePassword";
 import { RotateRecoveryKey } from "./RotateRecoveryKey";
 import { SecurityToggle } from "../my-files/SecurityToggle";
+import { LockOnSettings } from "./LockOnSettings";
 
 export default async function SettingsPage() {
   const session = await auth.api.getSession({
@@ -29,6 +30,7 @@ export default async function SettingsPage() {
         <UpdatePassword />
         <RotateRecoveryKey />
       </div>
+      <LockOnSettings />
     </div>
   );
 }
