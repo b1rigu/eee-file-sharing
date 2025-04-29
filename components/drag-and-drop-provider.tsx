@@ -68,8 +68,8 @@ export function DragAndDropProvider({
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        distance: 20,
-        delay: 100,
+        distance: 5,
+        delay: 200,
       },
     })
   );
