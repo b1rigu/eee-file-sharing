@@ -5,8 +5,9 @@ import {
   DndContext,
   DragEndEvent,
   DragStartEvent,
-  PointerSensor,
+  MouseSensor,
   rectIntersection,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -60,9 +61,15 @@ export function DragAndDropProvider({
   const { refetchData } = useUserData();
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 20,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        distance: 20,
+        delay: 100,
       },
     })
   );

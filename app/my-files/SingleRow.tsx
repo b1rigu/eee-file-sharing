@@ -64,7 +64,10 @@ export function SingleRow({
             onCheckedChange={() => handleSelect(item.id)}
           />
         </TableCell>
-        <TableCell {...(isDraggable ? draggable.listeners : {})}>
+        <TableCell
+          {...(isDraggable ? draggable.listeners : {})}
+          className="touch-manipulation"
+        >
           <ContextMenu>
             <ContextMenuTrigger>
               <div className="flex items-center gap-2">
@@ -113,19 +116,34 @@ export function SingleRow({
             </ContextMenuContent>
           </ContextMenu>
         </TableCell>
-        <TableCell {...(isDraggable ? draggable.listeners : {})}>
+        <TableCell
+          {...(isDraggable ? draggable.listeners : {})}
+          className="touch-manipulation"
+        >
           {item.type === "folder"
             ? "--"
             : formatFileSize(Number(item.encryptedSize!))}
         </TableCell>
-        <TableCell {...(isDraggable ? draggable.listeners : {})}>
+        <TableCell
+          {...(isDraggable ? draggable.listeners : {})}
+          className="touch-manipulation"
+        >
           {item.type === "folder" ? "Folder" : item.encryptedType!}
         </TableCell>
-        <TableCell {...(isDraggable ? draggable.listeners : {})}>
+        <TableCell
+          {...(isDraggable ? draggable.listeners : {})}
+          className="touch-manipulation"
+        >
           {item.createdAt.toLocaleString()}
         </TableCell>
-        <TableCell>
-          <div className="flex items-center">
+        <TableCell onClick={() => setShareDialogOpen(true)} className="cursor-pointer hover:">
+          <div
+            className="flex items-center"
+            onClick={() => setShareDialogOpen(true)}
+          >
+            {visibleUsers.length === 0 && (
+              <p className="text-muted-foreground">Click to share</p>
+            )}
             <div className="flex -space-x-2">
               {visibleUsers.map((user) => (
                 <Avatar
