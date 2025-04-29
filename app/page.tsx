@@ -9,9 +9,11 @@ import {
 import {
   ArrowRight,
   ChevronRight,
+  File,
   FileKey,
   Lock,
   Shield,
+  Unlock,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -65,8 +67,33 @@ export default async function Home() {
                           <span className="text-sm">Secure</span>
                         </div>
                       </div>
-                      <div className="mt-4 grid gap-3">
-                        {[1, 2, 3, 4].map((item) => (
+                      <p className="font-medium my-2">What you see:</p>
+                      <div className="grid gap-3">
+                        {[1].map((item) => (
+                          <div
+                            key={item}
+                            className="flex items-center justify-between rounded-lg border p-3"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-md bg-muted p-2">
+                                <File className="h-4 w-4 text-primary" />
+                              </div>
+                              <div>
+                                <div className="font-medium">
+                                  Document-{item}.pdf
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  2.4 MB
+                                </div>
+                              </div>
+                            </div>
+                            <Unlock className="h-4 w-4 text-primary" />
+                          </div>
+                        ))}
+                        <p className="font-medium my-2">
+                          What our servers see:
+                        </p>
+                        {[1].map((item) => (
                           <div
                             key={item}
                             className="flex items-center justify-between rounded-lg border p-3"
@@ -77,10 +104,10 @@ export default async function Home() {
                               </div>
                               <div>
                                 <div className="font-medium">
-                                  Document-{item}.pdf
+                                  9f2d1a5c6f7e4d7a...
                                 </div>
                                 <div className="text-xs text-muted-foreground">
-                                  Encrypted • 2.4 MB
+                                  a3d4f56d98712c4f...
                                 </div>
                               </div>
                             </div>
