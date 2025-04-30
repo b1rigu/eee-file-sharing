@@ -136,34 +136,41 @@ export function SingleRow({
         >
           {item.createdAt.toLocaleString()}
         </TableCell>
-        <TableCell onClick={() => setShareDialogOpen(true)} className="cursor-pointer hover:">
-          <div
-            className="flex items-center"
-            onClick={() => setShareDialogOpen(true)}
-          >
-            {visibleUsers.length === 0 && (
-              <p className="text-muted-foreground">Click to share</p>
-            )}
-            <div className="flex -space-x-2">
-              {visibleUsers.map((user) => (
-                <Avatar
-                  key={user.id}
-                  className="border-2 border-background h-8 w-8"
-                >
-                  <AvatarImage
-                    src={user.receiver.image ?? undefined}
-                    alt={user.receiver.email}
-                  />
-                  <AvatarFallback>{user.receiver.email}</AvatarFallback>
-                </Avatar>
-              ))}
+        <TableCell
+          onClick={() => {
+            if (item.type === "file") setShareDialogOpen(true);
+          }}
+          className={`${item.type === "file" ? "cursor-pointer" : ""}`}
+        >
+          {item.type === "folder" && (
+            <p className="text-muted-foreground">--</p>
+          )}
+          {item.type === "file" && (
+            <div className="flex items-center">
+              {visibleUsers.length === 0 && (
+                <p className="text-muted-foreground">Click to share</p>
+              )}
+              <div className="flex -space-x-2">
+                {visibleUsers.map((user) => (
+                  <Avatar
+                    key={user.id}
+                    className="border-2 border-background h-8 w-8"
+                  >
+                    <AvatarImage
+                      src={user.receiver.image ?? undefined}
+                      alt={user.receiver.email}
+                    />
+                    <AvatarFallback>{user.receiver.email}</AvatarFallback>
+                  </Avatar>
+                ))}
+              </div>
+              {remainingCount > 0 && (
+                <span className="ml-2 text-sm text-muted-foreground">
+                  +{remainingCount} more
+                </span>
+              )}
             </div>
-            {remainingCount > 0 && (
-              <span className="ml-2 text-sm text-muted-foreground">
-                +{remainingCount} more
-              </span>
-            )}
-          </div>
+          )}
         </TableCell>
         <TableCell className="text-right">
           <DropdownMenu>
