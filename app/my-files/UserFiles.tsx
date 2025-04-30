@@ -2,7 +2,7 @@
 
 import { useUserData } from "@/components/user-data-context";
 import { usePrivateKey } from "@/components/private-key-context";
-import { Cloud, Loader2, Lock } from "lucide-react";
+import { Cloud, Folder, Loader2, Lock } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -110,7 +110,11 @@ export function UserFiles() {
       <DragOverlay modifiers={[snapCenterToCursor, restrictToWindowEdges]}>
         {activeItem ? (
           <div className="border drop-shadow-md px-8 py-2 text-nowrap bg-background rounded-2xl w-min cursor-grabbing flex items-center gap-2">
-            {getFileIcon(activeItem.encryptedType!, 4)}
+            {activeItem.type === "folder" && (
+              <Folder className="h-4 w-4 text-blue-500" />
+            )}
+            {activeItem.type === "file" &&
+              getFileIcon(activeItem.encryptedType!, 4)}
             <p>{activeItem.encryptedName}</p>
           </div>
         ) : null}
