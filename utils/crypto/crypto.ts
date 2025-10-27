@@ -129,7 +129,7 @@ export async function encryptBlobWithMetaAESGCM(
   progressCallback?: (progress: number) => void
 ) {
   const aesKey = await generateAESGCMKey();
-  const encryptedChunks: Uint8Array[] = [];
+  const encryptedChunks: Uint8Array<ArrayBuffer>[] = [];
   const fileBuffer = await blob.arrayBuffer();
   const fileBytes = new Uint8Array(fileBuffer);
 

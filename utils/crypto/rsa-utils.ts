@@ -95,7 +95,7 @@ export async function exportRSAPrivateKey(privateKey: CryptoKey) {
 }
 
 export async function encryptBufferWithRSAPublicKey(
-  buffer: ArrayBuffer | Uint8Array,
+  buffer: ArrayBuffer | Uint8Array<ArrayBuffer>,
   RSAPublicKey: string
 ) {
   const importedPublicKey = await importRSAPublicKeyToEncrypt(RSAPublicKey);
@@ -107,7 +107,7 @@ export async function encryptBufferWithRSAPublicKey(
 }
 
 export async function decryptBufferWithRSAPrivateKey(
-  buffer: ArrayBuffer | Uint8Array,
+  buffer: ArrayBuffer | Uint8Array<ArrayBuffer>,
   RSAPrivateKey: string
 ) {
   const importedPrivateKey = await importRSAPrivateKeyToDecrypt(RSAPrivateKey);

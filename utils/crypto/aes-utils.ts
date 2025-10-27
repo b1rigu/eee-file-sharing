@@ -35,7 +35,7 @@ export async function importAESKeyForDecrypt(base64Key: string) {
 export async function deriveKeyFromPasswordKey(
   usage: "encrypt" | "decrypt",
   passwordKey: CryptoKey,
-  salt: Uint8Array
+  salt: Uint8Array<ArrayBuffer>
 ) {
   return await crypto.subtle.deriveKey(
     {
@@ -52,9 +52,9 @@ export async function deriveKeyFromPasswordKey(
 }
 
 export async function encryptBufferWithAESGCM(
-  iv: Uint8Array,
+  iv: Uint8Array<ArrayBuffer>,
   aesKey: CryptoKey,
-  buffer: ArrayBuffer | Uint8Array
+  buffer: ArrayBuffer | Uint8Array<ArrayBuffer>
 ) {
   return await crypto.subtle.encrypt(
     {
@@ -67,9 +67,9 @@ export async function encryptBufferWithAESGCM(
 }
 
 export async function decryptBufferWithAESGCM(
-  iv: Uint8Array,
+  iv: Uint8Array<ArrayBuffer>,
   aesKey: CryptoKey,
-  encryptedBuffer: ArrayBuffer | Uint8Array
+  encryptedBuffer: ArrayBuffer | Uint8Array<ArrayBuffer>
 ) {
   return await crypto.subtle.decrypt(
     {
