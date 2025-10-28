@@ -58,7 +58,7 @@ export function DragAndDropProvider({
 }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const { localPrivateKey } = usePrivateKey();
-  const { refetchData } = useUserData();
+  const { refetchData, setLoadingState } = useUserData();
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -79,6 +79,7 @@ export function DragAndDropProvider({
   }
 
   async function handleDragEnd(event: DragEndEvent) {
+    setLoadingState(true);
     setActiveId(null);
     const { active, over } = event;
     // active = currently dragging element
@@ -104,6 +105,7 @@ export function DragAndDropProvider({
 
     const userKeyResult = await getUserKeyAction();
     if (!userKeyResult || userKeyResult.serverError || !userKeyResult.data) {
+      setLoadingState(false);
       toast.error("You need to unlock");
       return;
     }
@@ -115,6 +117,7 @@ export function DragAndDropProvider({
       dataId: fileOrFolderId,
       signature: arrayBufferToBase64(signature),
     });
+    setLoadingState(false);
 
     if (result?.serverError) {
       toast.error(result.serverError);

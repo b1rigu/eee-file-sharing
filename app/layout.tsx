@@ -10,6 +10,7 @@ import { PrivateKeyProvider } from "@/components/private-key-context";
 import { HeaderLink } from "@/components/HeaderLink";
 import { Shield } from "lucide-react";
 import { RecoveryKeyDialog } from "@/components/RecoveryKeyDialog";
+import NextTopLoader from 'nextjs-toploader';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <NextTopLoader />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

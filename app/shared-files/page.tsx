@@ -1,6 +1,3 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { HeaderBadge } from "../my-files/HeaderBadge";
 import { SecurityToggle } from "../my-files/SecurityToggle";
 import { SharedFilesProvider } from "@/components/shared-data-context";
@@ -8,13 +5,6 @@ import { SharedFiles } from "./SharedFiles";
 import { SharedFilesRefreshButton } from "./SharedFilesRefreshButton";
 
 export default async function SharedFilesPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session) {
-    redirect("/sign-in");
-  }
-
   return (
     <SharedFilesProvider>
       <div className="flex flex-col gap-4 w-full">

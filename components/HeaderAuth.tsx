@@ -5,9 +5,8 @@ import { auth } from "@/lib/auth";
 import ProfileDropdown from "./ProfileDropdown";
 
 export async function HeaderAuth() {
-  const header = await headers();
   const session = await auth.api.getSession({
-    headers: header,
+    headers: await headers(),
   });
 
   return session ? (

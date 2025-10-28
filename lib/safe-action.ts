@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getIp } from "../utils/get-ip";
 import { auth } from "./auth";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { slidingWindowRateLimiter } from "./redis-rate-limiter";
 
 export const loggingMiddleware = createMiddleware<{
   metadata: { actionName: string };
@@ -37,15 +39,16 @@ export const actionClient = createSafeActionClient({
 
 export const unauthenticatedActionClient = actionClient.use(
   async ({ next }) => {
-    // const ip = await getIp();
-    // if (!ip) {
+    const ip = await getIp();
+    if (!ip) {
+      throw new Error("Rate limit exceeded");
+    }
+
+    // const isAllowed = await slidingWindowRateLimiter(5, 60, 20, `${ip}-global`);
+    // if (!isAllowed) {
     //   throw new Error("Rate limit exceeded");
     // }
 
-    // const { success } = await publicRatelimit.limit(`${ip}-global`);
-    // if (!success) {
-    //   throw new Error("Rate limit exceeded");
-    // }
     return next();
   }
 );
@@ -56,11 +59,11 @@ export const authActionClient = actionClient.use(async ({ next }) => {
   });
 
   if (!session) {
-    throw new Error("User not authenticated");
+    redirect("/sign-in");
   }
 
-  // const { success } = await userRatelimit.limit(`${user.id}-global`);
-  // if (!success) {
+  // const isAllowed = await slidingWindowRateLimiter(5, 60, 20, `${session.user.id}-global`);
+  // if (!isAllowed) {
   //   throw new Error("Rate limit exceeded");
   // }
 

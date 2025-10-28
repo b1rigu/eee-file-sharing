@@ -17,6 +17,7 @@ type UserDataContextType = {
   userAvailableData: UserData[];
   refetchData: () => void;
   loading: boolean;
+  setLoadingState: (state: boolean) => void;
 };
 
 const UserDataContext = createContext<UserDataContextType | undefined>(
@@ -110,12 +111,17 @@ export const UserDataProvider = ({
     setLoading(false);
   }
 
+  function setLoadingState(state: boolean) {
+    setLoading(state);
+  }
+
   return (
     <UserDataContext.Provider
       value={{
         userAvailableData,
         refetchData,
         loading,
+        setLoadingState
       }}
     >
       {children}

@@ -10,19 +10,9 @@ import { NewFolderButton } from "./NewFolderButton";
 import { Suspense } from "react";
 import { SelectedRowsProvider } from "@/components/selected-rows-provider";
 import { DeleteSelectedButton } from "./DeleteSelectedButton";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { DragAndDropProvider } from "@/components/drag-and-drop-provider";
 
 export default async function MyFilesPage() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session) {
-    redirect("/sign-in");
-  }
-
   return (
     <Suspense fallback={null}>
       <DirectoryProvider>

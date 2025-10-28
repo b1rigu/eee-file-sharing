@@ -186,7 +186,9 @@ export const PrivateKeyProvider = ({
   }
 
   async function handleEnable() {
+    setLoading(true);
     const userKeyResult = await getUserKeyAction();
+    setLoading(false);
     if (userKeyResult?.serverError) {
       toast.error(userKeyResult.serverError);
       return;
