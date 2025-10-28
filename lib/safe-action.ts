@@ -39,11 +39,11 @@ export const actionClient = createSafeActionClient({
 
 export const unauthenticatedActionClient = actionClient.use(
   async ({ next }) => {
-    const ip = await getIp();
-    if (!ip) {
-      throw new Error("Rate limit exceeded");
-    }
-
+    
+    // const ip = await getIp();
+    // if (!ip) {
+    //   throw new Error("Rate limit exceeded");
+    // }
     // const isAllowed = await slidingWindowRateLimiter(5, 60, 20, `${ip}-global`);
     // if (!isAllowed) {
     //   throw new Error("Rate limit exceeded");
